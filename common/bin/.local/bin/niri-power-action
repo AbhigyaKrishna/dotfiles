@@ -60,6 +60,13 @@ lid_is_closed() {
     grep -qi closed /proc/acpi/button/lid/*/state 2>/dev/null
 }
 
+# Suspend to RAM, then hibernate once it has been asleep a while — see
+# meta/system/sleep.conf.d/10-hibernate.conf. Falls back to a plain suspend so
+# a machine that cannot hibernate still sleeps rather than staying awake.
+sleep_now() {
+    systemctl suspend-then-hibernate || systemctl suspend
+}
+
 # Returns 0 when a display other than the laptop panel is plugged in, i.e. the
 # lid closing means clamshell mode rather than walking away. Read from DRM
 # sysfs rather than `niri msg` so this needs no JSON parser and stays correct
@@ -97,7 +104,7 @@ schedule_suspend() {
         lid_is_closed || exit 0
         on_ac && exit 0
         rm -f "$PIDFILE"
-        systemctl suspend
+        sleep_now
     ) &
     echo $! >"$PIDFILE"
 }
@@ -116,7 +123,7 @@ lid-close)
         pct=$(battery_pct)
         if [ -n "$pct" ] && [ "$pct" -le "$CRITICAL_PCT" ]; then
             sleep 1 # let the lock surface map before the screen freezes
-            systemctl suspend
+            sleep_now
         else
             schedule_suspend
         fi
@@ -130,7 +137,7 @@ idle-suspend)
     on_ac && exit 0
     lock
     sleep 1
-    systemctl suspend
+    sleep_now
     ;;
 *)
     echo "usage: ${0##*/} {lid-close|lid-open|idle-suspend}" >&2

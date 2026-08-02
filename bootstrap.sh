@@ -20,6 +20,7 @@ TIERS=(common theme desktop)
 STOW_FLAGS=()
 PROFILE=""
 MODE="apply"
+DRY=0
 
 die() { printf '\033[31merror:\033[0m %s\n' "$*" >&2; exit 1; }
 info() { printf '\033[36m==>\033[0m %s\n' "$*"; }
@@ -28,7 +29,7 @@ usage() { sed -n '2,12p' "${BASH_SOURCE[0]}" | sed 's/^# \?//'; exit 0; }
 
 while (($#)); do
   case "$1" in
-    -n|--simulate|--dry-run) STOW_FLAGS+=(--simulate --verbose) ;;
+    -n|--simulate|--dry-run) STOW_FLAGS+=(--simulate --verbose); DRY=1 ;;
     -v|--verbose)            STOW_FLAGS+=(--verbose) ;;
     --unstow)                MODE="unstow" ;;
     --list)                  MODE="list" ;;
@@ -75,6 +76,18 @@ selected_for() {
     | awk -F: -v t="$1" '$1 ~ "^[[:space:]]*"t"[[:space:]]*$" { $1=""; print }'
 }
 
+# systemd ignores a drop-in directory that is a symlink. Left to itself stow
+# folds a directory the target does not have yet into one link, so an
+# app.slice.d shipped by a package would silently never load. Creating the
+# directory for real first makes stow link the .conf files inside it instead.
+unfold_dropin_dirs() {
+  local pkgdir="$1" d
+  ((DRY)) && return 0
+  while IFS= read -r -d '' d; do
+    mkdir -p "$TARGET/${d#"$pkgdir/"}"
+  done < <(find "$pkgdir" -type d -path '*/.config/systemd/*' -name '*.d' -print0 2>/dev/null)
+}
+
 info "applying profile '$PROFILE'"
 
 for tier in "${TIERS[@]}"; do
@@ -94,6 +107,7 @@ for tier in "${TIERS[@]}"; do
 
   if ((${#want[@]})); then
     printf '  %-8s %s\n' "$tier" "${want[*]}"
+    for w in "${want[@]}"; do unfold_dropin_dirs "$REPO/$tier/$w"; done
     stow "${STOW_FLAGS[@]}" -d "$REPO/$tier" -t "$TARGET" "${want[@]}"
   fi
 done

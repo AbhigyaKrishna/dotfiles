@@ -9,11 +9,18 @@ input {
             //layout "us" // Use the American keyboard layout
         }
         numlock // Enable numlock on startup
+
+        // Defaults are 600ms before a key repeats at 25/sec, which feels
+        // sluggish holding a cursor key through code.
+        repeat-delay 300
+        repeat-rate 50
     }
 
     touchpad {
         tap // Enable tap-to-click
         natural-scroll // Enable natural (macOS-style) scrolling
+        dwt // Disable While Typing — stops a palm brushing the pad from
+            // jumping the cursor mid-sentence. Not on by default in niri.
     }
 
     focus-follows-mouse // Automatically focus windows under the mouse pointer

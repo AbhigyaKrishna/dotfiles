@@ -21,3 +21,22 @@ tlp.service
 # is what noctalia's PowerProfile bar widget talks to. Without it the widget
 # has nothing to read and the profile switching UI goes dead.
 tlp-pd.service
+
+# Kills a runaway app before the machine locks up. The thresholds live in the
+# app.slice drop-in under common/systemd and in meta/system/oomd.conf.d; this
+# is the daemon that acts on them. Without it both are inert.
+systemd-oomd.service
+
+# Trims the pacman cache, which otherwise grows without bound. Needs
+# pacman-contrib.
+paccache.timer
+
+# Monthly integrity check of the btrfs root. The unit is templated on the
+# mountpoint, and "-" is the escaped form of "/":
+#   sudo systemctl enable --now btrfs-scrub@-.timer
+btrfs-scrub@-.timer
+
+# Hourly snapshots of the root subvolume. snap-pac already snapshots around
+# pacman transactions; this adds the timeline between them, and
+# limine-snapper-sync makes both bootable from the menu.
+snapper-timeline.timer

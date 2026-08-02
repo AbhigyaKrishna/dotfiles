@@ -245,14 +245,33 @@ Restarting logind kills the session, so a reboot or a logout/login is the
 gentler way to pick it up. Drop-ins override the same keys in
 `/etc/systemd/logind.conf` and survive updates that rewrite it.
 
+**OOM protection and hibernation.** Two more drop-ins, covered in the memory
+and sleep sections below.
+
+```sh
+sudo install -Dm644 meta/system/oomd.conf.d/10-pressure.conf \
+  /etc/systemd/oomd.conf.d/10-pressure.conf
+sudo install -Dm644 meta/system/sleep.conf.d/10-hibernate.conf \
+  /etc/systemd/sleep.conf.d/10-hibernate.conf
+sudo systemctl restart systemd-oomd
+```
+
 **Enabled systemd units.** Recorded in `meta/systemd-user-units.txt` and
 `meta/systemd-system-units.txt`; see the fresh-machine steps above. The system
 list is deliberately not a full inventory — around thirty units are enabled on
 this machine and only the ones something tracked here depends on are listed.
 
-There are no custom systemd unit files. `~/.config/systemd/user/` holds only
-the enable-symlinks `systemctl --user enable` creates, and everything in
-`/etc/systemd/system/` is package-owned apart from the drop-in above.
+There are no custom systemd unit *files*. `~/.config/systemd/user/` holds the
+enable-symlinks `systemctl --user enable` creates plus one drop-in,
+`app.slice.d/10-oomd.conf` from the `systemd` package in `common/`; everything
+in `/etc/systemd/system/` is package-owned apart from the drop-in above.
+
+That drop-in is the reason `bootstrap.sh` pre-creates `*.d` directories under
+`.config/systemd` before stowing. systemd ignores a drop-in directory that is
+a symlink, and stow folds a directory the target does not have yet into a
+single link — so the file would be linked correctly, load never, and give no
+error. Check with `systemctl --user show app.slice -p DropInPaths`: an empty
+value means it folded.
 
 ## Lock, lid and idle
 
@@ -263,12 +282,22 @@ staying awake would flatten a battery.
 
 | Trigger | On mains | On battery |
 | --- | --- | --- |
-| Lid closed | lock, stay running | lock, then suspend after 10 min |
-| Lid closed, battery ≤ 20% | — | lock and suspend immediately |
+| Lid closed | lock, stay running | lock, then sleep after 10 min |
+| Lid closed, battery ≤ 20% | — | lock and sleep immediately |
 | Lid closed, external display | nothing — keep working | nothing — keep working |
 | Idle 10 min | screens off | screens off |
 | Idle 11 min | lock | lock |
-| Idle 30 min | stay running | lock and suspend |
+| Idle 30 min | stay running | lock and sleep |
+
+"Sleep" means `suspend-then-hibernate`: suspend to RAM, then hibernate ninety
+minutes later if it is still asleep, so a bag overnight does not come out flat.
+`meta/system/sleep.conf.d/10-hibernate.conf` sets the delay and stops a machine
+on mains hibernating on its own. The script falls back to a plain suspend if
+hibernation is unavailable, so this degrades rather than breaks. Hibernation
+needs no extra setup here — `resume=UUID=...` is already on the kernel cmdline
+against a 20G swap partition, and logind reports `CanSuspendThenHibernate=yes`
+— but it is worth trying `systemctl hibernate` by hand once, since zram runs
+near full on this machine and its pages go into the image too.
 
 Three pieces cooperate:
 
@@ -332,6 +361,32 @@ cut, `lockScreenBlur` and `lockScreenTint` for a blurred and dimmed wallpaper,
 and `enableLockScreenMediaControls` so what is playing stays controllable.
 `allowPasswordWithFprintd` is left off — no fingerprint reader on this machine.
 `Mod+Alt+L` locks on demand.
+
+## Memory pressure
+
+14G of RAM with zram on top is not much for this workload, and the machine runs
+close to the edge: `/proc/pressure/memory` sits around `full avg300=7%`, meaning
+roughly seven percent of any five minutes *every* task is stalled waiting on
+memory. Without a userspace OOM killer the next spike is a hard freeze — the
+kernel's own OOM killer only acts once an allocation actually fails, long after
+the desktop has stopped responding.
+
+`systemd-oomd` handles it, driven by `common/systemd`'s drop-in on `app.slice`.
+The scoping is what makes this safe. niri runs in `session.slice` while the
+user manager gives every app it launches its own scope under `app.slice`
+(`app-niri-kitty-2970.scope`), so oomd can only ever choose an application —
+it structurally cannot kill the compositor or log the session out. The same
+per-app scoping is why oomd suits this setup better than `earlyoom`, which
+picks a single process by score: oomd takes out one whole app cleanly.
+
+The trigger is memory pressure, never swap usage. Swap-based killing is the
+other common recipe and would be actively wrong here, because zram is meant to
+sit near 100% — a swap threshold would fire constantly during normal use.
+
+```sh
+systemctl --user show app.slice -p DropInPaths -p ManagedOOMMemoryPressure
+journalctl -u systemd-oomd            # what it killed, and why
+```
 
 ## Adding a desktop environment
 

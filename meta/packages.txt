@@ -82,3 +82,17 @@ tlp-pd                      # provides= power-profiles-daemon and conflicts
                             #   powerprofilesctl — that binary is gone.
 tlpui                       # GTK editor for the drop-in, the way xdgctl edits
                             #   mimeapps.list — changes show up as a diff
+
+# --- maintenance ------------------------------------------------------------
+# Back the timers in meta/systemd-system-units.txt. pacman-contrib provides
+# paccache.timer, btrfs-progs the scrub timer, snapper and snap-pac the
+# snapshots that limine-snapper-sync turns into boot entries. All were already
+# installed here; they are listed so a fresh machine gets the timers too.
+pacman-contrib
+btrfs-progs
+snapper
+snap-pac
+limine-snapper-sync
+fwupd                       # firmware and BIOS updates: fwupdmgr refresh,
+                            #   then fwupdmgr update. Nothing else was
+                            #   delivering them on this machine.
