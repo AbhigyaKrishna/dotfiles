@@ -93,6 +93,26 @@ btrfs-progs
 snapper
 snap-pac
 limine-snapper-sync
-fwupd                       # firmware and BIOS updates: fwupdmgr refresh,
-                            #   then fwupdmgr update. Nothing else was
-                            #   delivering them on this machine.
+fwupd                       # firmware updates: fwupdmgr refresh, then
+                            #   fwupdmgr update. Nothing else was delivering
+                            #   them on this machine. fwupd-refresh.timer in
+                            #   meta/systemd-system-units.txt keeps the LVFS
+                            #   metadata current.
+                            #
+                            #   Two things to know before running `update`.
+                            #   LVFS has nothing for this laptop's BIOS — HP
+                            #   does not publish the Pavilion Gaming 15-ec2xxx
+                            #   there — so System Firmware reporting no updates
+                            #   means uncovered, not current.
+                            #
+                            #   And the UEFI dbx update it does offer is
+                            #   deliberately not applied. dbx is the Secure
+                            #   Boot revocation list, which firmware only
+                            #   consults when Secure Boot is on; it is off here
+                            #   (SecureBoot efivar 0, no shim, single OS). The
+                            #   update is therefore inert, while being awkward
+                            #   to undo — clearing dbx means resetting Secure
+                            #   Boot keys in BIOS setup — and dbx is the usual
+                            #   culprit when fwupd breaks a boot. If Secure
+                            #   Boot is ever enabled, apply dbx first and set
+                            #   up signing (sbctl) after, not the reverse.

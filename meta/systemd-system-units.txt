@@ -40,3 +40,10 @@ btrfs-scrub@-.timer
 # pacman transactions; this adds the timeline between them, and
 # limine-snapper-sync makes both bootable from the menu.
 snapper-timeline.timer
+
+# Keeps the LVFS metadata current so `fwupdmgr get-updates` stays meaningful.
+# Refreshes metadata only — it never installs firmware. Note LVFS carries
+# nothing for this laptop's BIOS (HP does not publish the Pavilion Gaming
+# 15-ec2xxx there), so this is mostly about being covered if that changes or a
+# component vendor starts publishing.
+fwupd-refresh.timer
