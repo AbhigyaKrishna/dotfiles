@@ -295,12 +295,13 @@ staying awake would flatten a battery.
 
 | Trigger | On mains | On battery |
 | --- | --- | --- |
+| Power button | session menu | session menu |
 | Lid closed | lock, stay running | lock, then sleep after 10 min |
 | Lid closed, battery ≤ 20% | — | lock and sleep immediately |
 | Lid closed, external display | nothing — keep working | nothing — keep working |
-| Idle 10 min | screens off | screens off |
-| Idle 11 min | lock | lock |
-| Idle 30 min | stay running | lock and sleep |
+| Idle 10 min | lock | lock |
+| Idle 11 min | stay lit | screens off |
+| Idle 20 min | screens off, stay running | sleep |
 
 "Sleep" means `suspend-then-hibernate`: suspend to RAM, then hibernate ninety
 minutes later if it is still asleep, so a bag overnight does not come out flat.
@@ -312,7 +313,39 @@ against a 20G swap partition, and logind reports `CanSuspendThenHibernate=yes`
 — but it is worth trying `systemctl hibernate` by hand once, since zram runs
 near full on this machine and its pages go into the image too.
 
-Three pieces cooperate:
+The idle chain locks first and blanks second, which is the opposite of the usual
+order and deliberate: on mains the lock screen then stays lit for a further ten
+minutes, so a machine you are still nominally at keeps a glanceable clock and
+never leaves you guessing whether a dark laptop is asleep or off. On battery
+that indulgence is not worth the charge, so the panel goes dark a minute after
+locking and the machine sleeps at twenty.
+
+Which stage lives where follows from that. A stage that behaves the same on
+both power sources is noctalia's own; a stage that has to ask is not. Locking at
+ten and blanking at twenty are unconditional — the twenty-minute blank is simply
+a no-op on battery, where the panel has been dark since eleven — so both are
+built-in stages, and both keep the fade overlay that a stray mouse nudge
+cancels. Blanking at eleven and sleeping at twenty do have to ask, and neither
+built-in stage can be talked out of firing: `idle.screenOffCommand` and
+`idle.suspendCommand` run *alongside* `turnOffMonitors()` and `suspend()` rather
+than replacing them (see `IdleService.qml`, `_executeAction`). Those two
+therefore run from `idle.customCommands`, where the script decides. The cost is
+that custom stages get no fade and no automatic `turnOnMonitors()` on wake,
+which is what the paired `resumeCommand` is for.
+
+The power button opens the session menu — lock, suspend, log out, reboot, shut
+down — so the button asks rather than acts. It needs no logind drop-in to do
+that: niri holds a *blocking* `handle-power-key` inhibitor for as long as it
+runs, so logind's `HandlePowerKey=poweroff` never fires and the key arrives at
+the compositor as an ordinary `XF86PowerOff`. `systemd-inhibit --list` shows the
+inhibitor. The binding lives with the other keys in `cfg/keybinds.kdl`, next to
+`Mod+Shift+Q`, which opens the same menu. It is deliberately *not*
+`allow-when-locked`: the menu would draw beneath the lock surface and be
+unreachable, and the lock screen carries its own session buttons already.
+Holding the button still triggers the firmware cut, which nothing in userspace
+can intercept.
+
+Four pieces cooperate:
 
 **`meta/system/logind.conf.d/10-lid.conf`** takes logind out of the picture.
 The obvious `HandleLidSwitch=lock` does not work: noctalia has no logind
@@ -325,9 +358,24 @@ and leave the session unlocked behind it. Every `HandleLidSwitch*` is therefore
 niri's `switch-events`. `lid-close` and `lid-open` both call the script below;
 reopening the lid cancels a pending suspend.
 
+**`desktop/niri/.config/noctalia/settings.json`** holds the idle timeouts under
+`idle`: `lockTimeout` 600 and `screenOffTimeout` 1200 for the unconditional
+stages, `suspendTimeout` 0 because there is no unconditional suspend, and two
+`customCommands` entries at 660 and 1200 seconds calling the script's
+`idle-screen-off` and `idle-suspend` modes. The 660 entry pairs with a
+`resumeCommand` running `idle-screen-on`.
+
+`fadeDuration` is 5, so each built-in stage is announced by a five-second fade
+to black that any input cancels. Raising the timeouts is the usual first tweak;
+they are seconds, and noctalia reloads the file as soon as it is written, so
+no restart is needed.
+
 **`common/bin/.local/bin/niri-power-action`** decides what a lid close or an
-idle timeout should actually do, since that depends on power state. Its two
-tunables sit at the top of the file: `CRITICAL_PCT=20` and `LID_GRACE=600`.
+idle timeout should actually do, since that depends on power state. Every
+power-conditional decision in the session funnels through its `on_ac()`
+predicate, which reads `/sys/class/power_supply/*` directly rather than going
+through D-Bus. Its two tunables sit at the top of the file: `CRITICAL_PCT=20`
+and `LID_GRACE=600`.
 The scheduled suspend re-checks both the lid and the power state when it fires,
 so a missed `lid-open` event cannot suspend a machine that is open and in use.
 

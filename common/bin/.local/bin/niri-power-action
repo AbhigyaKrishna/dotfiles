@@ -2,16 +2,28 @@
 # niri-power-action — power-state-aware session actions for niri + noctalia.
 #
 # Modes:
-#   lid-close     Lock. On battery, suspend now if critically low, else after
-#                 LID_GRACE seconds of the lid staying shut. Does nothing at
-#                 all when an external display is attached (clamshell mode).
-#   lid-open      Cancel any pending lid-close suspend.
-#   idle-suspend  Suspend, but only when running on battery.
+#   lid-close        Lock. On battery, suspend now if critically low, else after
+#                    LID_GRACE seconds of the lid staying shut. Does nothing at
+#                    all when an external display is attached (clamshell mode).
+#   lid-open         Cancel any pending lid-close suspend.
+#   idle-screen-off  Blank the displays, but only when running on battery.
+#   idle-screen-on   Undo idle-screen-off. Safe to run unconditionally.
+#   idle-suspend     Suspend, but only when running on battery.
 #
 # The point of all of it is that locking and suspending are separate things.
 # Closing the lid or walking away locks the screen while background work
 # (builds, downloads, music, SSH sessions) keeps running. The machine only
 # actually suspends when staying awake would drain a battery, never on mains.
+#
+# The idle chain walks the same line. Locking at ten minutes and blanking at
+# twenty happen on either power source, so those stay noctalia's own stages
+# (idle.lockTimeout, idle.screenOffTimeout) and keep its fade overlay. Blanking
+# early at eleven and sleeping at twenty happen only on battery, and noctalia's
+# built-in stages cannot be told not to fire — screenOffCommand and
+# suspendCommand run alongside turnOffMonitors() and suspend() rather than
+# replacing them (see IdleService.qml _executeAction). Those two therefore come
+# through idle.customCommands into the modes below, which is the only place the
+# power source gets a vote.
 #
 # Wired up from:
 #   ~/.config/niri/cfg/lid.kdl        — switch-events { lid-close / lid-open }
@@ -132,6 +144,17 @@ lid-close)
 lid-open)
     cancel_pending
     ;;
+idle-screen-off)
+    # On mains the lock screen stays lit — glanceable clock, and no wondering
+    # whether a dark machine is asleep or off. Mod+Shift+P blanks it by hand.
+    on_ac && exit 0
+    niri msg action power-off-monitors
+    ;;
+idle-screen-on)
+    # Runs on any activity, including activity that never blanked anything, so
+    # it has to be a harmless no-op in that case. power-on-monitors is.
+    niri msg action power-on-monitors
+    ;;
 idle-suspend)
     # Idling on mains is free; stay awake and keep working.
     on_ac && exit 0
@@ -140,7 +163,7 @@ idle-suspend)
     sleep_now
     ;;
 *)
-    echo "usage: ${0##*/} {lid-close|lid-open|idle-suspend}" >&2
+    echo "usage: ${0##*/} {lid-close|lid-open|idle-screen-off|idle-screen-on|idle-suspend}" >&2
     exit 2
     ;;
 esac
