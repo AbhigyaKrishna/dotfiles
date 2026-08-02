@@ -10,7 +10,11 @@ zoxide init fish | source
 
 # bun
 set --export BUN_INSTALL "$HOME/.bun"
-set --export PATH $BUN_INSTALL/bin $PATH
+# Guarded: config.fish runs for every shell, so an unconditional prepend adds
+# another copy at each nesting level.
+if not contains $BUN_INSTALL/bin $PATH
+    set --export PATH $BUN_INSTALL/bin $PATH
+end
 
 # Set per-session so it follows the runtime dir, rather than as a universal
 # variable with a hardcoded uid baked in.

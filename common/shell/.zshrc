@@ -7,6 +7,10 @@ fi
 
 source /usr/share/cachyos-zsh-config/cachyos-config.zsh
 
+# Keep $path unique. The appends below run again on every re-source, and
+# .profile and the cachyos config add entries of their own.
+typeset -U path PATH
+
 alias code='code-insiders'
 alias ssh='kitty +kitten ssh'
 alias fzf='fzf --style full --preview "fzf-preview.sh {}" --bind "focus:transform-header:file --brief {}"'
