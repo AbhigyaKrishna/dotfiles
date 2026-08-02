@@ -129,6 +129,12 @@ gamemode                    # performance governor + scheduling for the
                             #   duration of a game, restored on exit. Matters
                             #   here because TLP is deliberately conservative;
                             #   config in common/gaming/.config/gamemode.ini
+                            #
+                            #   Needs `usermod -aG gamemode $USER` and a
+                            #   re-login, or renice silently does nothing —
+                            #   the package ships the limits.d permission and
+                            #   the group but adds no one to it. See the
+                            #   gamemode group note in the README.
 lib32-gamemode              # 32-bit games and the Steam runtime need this too,
                             #   or gamemoderun silently does nothing for them
 mangohud                    # overlay; its gpu_name field is how you confirm a

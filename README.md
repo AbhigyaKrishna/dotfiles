@@ -177,6 +177,19 @@ grep "$USER" /etc/subuid /etc/subgid   # verify
 
 `kernel.unprivileged_userns_clone` must also be `1`; it is the default on Arch.
 
+**gamemode group.** gamemode renices a running game to a negative priority,
+which an unprivileged process may not do. The package ships the permission —
+`@gamemode - nice -10` in `/etc/security/limits.d/10-gamemode.conf` — and
+creates the group, but adds nobody to it, so out of the box `ulimit -e` is 0
+and gamemode silently runs with renice disabled. Nothing announces this; the
+only sign is `gamemoded -t` reporting `Verifying renice ... Failed!`.
+
+```sh
+sudo usermod -aG gamemode "$USER"
+# log out and back in — group membership and rlimits are set at login
+gamemoded -t                       # expect Tests Succeeded
+```
+
 **TLP as the power manager.** TLP handles power here, not
 `power-profiles-daemon`. On this laptop there is no ACPI `platform_profile`, so
 PPD had nothing but the `amd_pstate` knob and reported `PlatformDriver:
