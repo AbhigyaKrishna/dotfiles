@@ -82,6 +82,7 @@ desktop packages.
 | `.config/systemd/user/` | generated enable-symlinks; see `meta/systemd-user-units.txt` |
 | `.config/vesktop/`, `.config/zen/` | 4 GB of browser and app profile data |
 | `.config/mpv/` | empty |
+| `.config/noisetorch/`, `.config/openrazer/` | written by their own daemons and tied to this machine's devices |
 | `.config/fish/fish_variables` | see below — seeded from `meta/fish_variables.seed` |
 
 ### fish_variables

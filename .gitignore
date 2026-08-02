@@ -45,3 +45,7 @@
 # fish rewrites its universal-variable file live; it cannot be a symlink.
 # Seeded from meta/fish_variables.seed instead.
 **/fish/fish_variables
+
+# Daemon-managed hardware config, kept local
+**/noisetorch/
+**/openrazer/
