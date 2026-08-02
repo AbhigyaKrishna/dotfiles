@@ -49,8 +49,12 @@ cd ~/Projects/dotfiles
 ./bootstrap.sh niri
 cp meta/fish_variables.seed ~/.config/fish/fish_variables   # see below
 grep -v '^#' meta/systemd-user-units.txt | xargs -r systemctl --user enable --now
+grep -v '^#' meta/systemd-system-units.txt | xargs -r sudo systemctl enable --now
 fisher update     # restores fish plugins listed in fish_plugins
 ```
+
+The root-owned pieces are not covered by any of this; install them by hand from
+`meta/system/` as described below.
 
 Stow refuses to overwrite a real file. If a fresh install has already written a
 config, move it aside and re-run.
@@ -173,62 +177,43 @@ grep "$USER" /etc/subuid /etc/subgid   # verify
 
 `kernel.unprivileged_userns_clone` must also be `1`; it is the default on Arch.
 
-**Power profile switching.** `power-profiles-daemon` comes in with the desktop
-tier — it is an optdepend of `noctalia-shell`, and the bar's `PowerProfile`
-widget reads and sets profiles through it. It exposes the profiles but does not
-choose between them, so switching stays manual, from the widget. This udev rule
-adds the automatic half: on every AC adapter change it runs a helper that sets
-`performance` on the charger and `power-saver` on battery. The widget still
-works without the rule; the rule needs the package the widget already pulls in.
+**TLP as the power manager.** TLP handles power here, not
+`power-profiles-daemon`. On this laptop there is no ACPI `platform_profile`, so
+PPD had nothing but the `amd_pstate` knob and reported `PlatformDriver:
+placeholder` for two of its three profiles; TLP tunes disk APM, PCIe ASPM, wifi
+power save and USB besides, and switches on AC/battery by itself.
+
+The bar keeps working across the swap. `tlp-pd` declares
+`provides=power-profiles-daemon`, satisfying noctalia's optdepend, and ships
+both the `org.freedesktop.UPower.PowerProfiles` and `net.hadess.PowerProfiles`
+D-Bus interfaces — the former is what noctalia's `PowerProfileService.qml`
+reaches through `Quickshell.Services.UPower`.
 
 ```sh
-sudo install -Dm755 meta/system/bin/power-profile-auto.sh \
-  /usr/local/bin/power-profile-auto.sh
-sudo install -Dm644 meta/system/udev/99-power-profile.rules \
-  /etc/udev/rules.d/99-power-profile.rules
-sudo udevadm control --reload
-```
-
-The helper hardcodes `ACAD` as the adapter, which is this laptop's name for it.
-Other machines use `AC`, `AC0` or `ADP1`, and a desktop has none — there the
-script's file test fails and it quietly does nothing rather than misfiring.
-`ls /sys/class/power_supply/` shows the right name; the script has a comment
-saying so.
-
-**TLP, as device tweaks only.** TLP is installed but is *not* the power
-manager — `power-profiles-daemon` is. The two are mutually exclusive as profile
-managers, so `tlp.service` stays disabled; enabling it makes them fight over
-the governor and the platform profile, and `tlp-stat -s` reports the clash.
-What TLP contributes is two settings that are not profile settings and overlap
-with nothing PPD touches: `SOUND_POWER_SAVE_ON_AC=0` stops the HDA codec
-sleeping on AC and popping at the start of playback, and `USB_AUTOSUSPEND=0`
-stops USB devices being suspended out from under you.
-
-```sh
+paru -S tlp-pd                                    # replaces power-profiles-daemon
 sudo install -Dm644 meta/system/tlp.d/10-local.conf /etc/tlp.d/10-local.conf
-sudo tlp start
+sudo systemctl enable --now tlp.service tlp-pd.service
+tlp-stat -s                                       # expect no conflict warning
 ```
 
-A drop-in rather than `/etc/tlp.conf`, because tlp.conf is a pacman backup file
-and editing it earns a `.pacnew` on every update. `/etc/tlp.d/README` documents
-this as the intended path. `tlpui` is installed for editing it.
+The drop-in holds the only two settings this machine changes from TLP's
+defaults: `SOUND_POWER_SAVE_ON_AC=0` stops the HDA codec sleeping on AC and
+popping at the start of playback, `USB_AUTOSUSPEND=0` stops USB devices being
+suspended out from under you. It is a drop-in rather than an edit to
+`/etc/tlp.conf` because tlp.conf is a pacman backup file and editing it earns a
+`.pacnew` on every update; `/etc/tlp.d/README` names this as the intended path.
+`tlpui` is installed for editing it. Note tlp.conf overrides the directory, so
+the settings must not be set in both.
 
-**These two settings do not survive a reboot.** Applying them is what
-`tlp.service` would do, and it is disabled, so they only take effect when TLP
-is run by hand. If that matters, the way to make them stick without handing
-power management back to TLP is to set them at the module level instead, which
-takes effect at boot and does not involve TLP at all:
+The CLI is `tlpctl`. `powerprofilesctl` does not exist under this setup —
+anything scripted against it needs changing. To go back, `paru -S
+power-profiles-daemon` removes `tlp-pd` by conflict; disable `tlp.service`
+afterwards or the two will fight over the governor.
 
-```sh
-echo 'options snd_hda_intel power_save=0' | sudo tee /etc/modprobe.d/audio.conf
-echo 'options usbcore autosuspend=-1'     | sudo tee /etc/modprobe.d/usb.conf
-```
-
-That is not what is deployed here; the drop-in above is. Recorded as the known
-alternative rather than applied silently.
-
-**Enabled systemd user units.** Recorded in `meta/systemd-user-units.txt`; see
-the fresh-machine steps above.
+**Enabled systemd units.** Recorded in `meta/systemd-user-units.txt` and
+`meta/systemd-system-units.txt`; see the fresh-machine steps above. The system
+list is deliberately not a full inventory — around thirty units are enabled on
+this machine and only the ones something tracked here depends on are listed.
 
 There are no custom systemd unit files. `~/.config/systemd/user/` holds only
 the enable-symlinks `systemctl --user enable` creates, and everything in

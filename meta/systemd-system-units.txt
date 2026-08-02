@@ -1,0 +1,23 @@
+# systemd system units this configuration needs enabled.
+#
+# NOT a full inventory of what is enabled on this machine — roughly thirty
+# units are, and the rest (sddm, NetworkManager, docker, ufw, bluetooth, cups,
+# tailscaled, limine-snapper-sync ...) are deliberately left out. They are
+# either distro defaults or per-machine choices, not things this repo
+# configures. Only the units something tracked here depends on belong in this
+# file.
+#
+# Re-enable on a fresh machine:
+#   grep -v '^#' meta/systemd-system-units.txt | xargs -r sudo systemctl enable --now
+#
+# Note this file is for SYSTEM units and needs sudo. The user units are in
+# meta/systemd-user-units.txt and must not be enabled with it.
+
+# TLP is the power manager (see meta/system/tlp.d/10-local.conf). Without
+# tlp.service the settings in that drop-in are never applied at boot.
+tlp.service
+
+# tlp-pd exposes TLP through the power-profiles-daemon D-Bus interfaces, which
+# is what noctalia's PowerProfile bar widget talks to. Without it the widget
+# has nothing to read and the profile switching UI goes dead.
+tlp-pd.service

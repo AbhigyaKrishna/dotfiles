@@ -18,10 +18,9 @@ quickshell
 monique                     # AUR
 polkit-kde-agent            # niri/cfg/autostart.kdl spawns
                             #   /usr/lib/polkit-kde-authentication-agent-1
-power-profiles-daemon       # optdepend of noctalia-shell; noctalia/settings.json
-                            #   sets showPowerProfiles and puts a PowerProfile
-                            #   widget in the bar. meta/system/udev/
-                            #   99-power-profile.rules also drives it.
+                            # noctalia's PowerProfile widget needs a
+                            # power-profiles-daemon; tlp-pd supplies it, in the
+                            # power section below.
 
 # --- shells and prompt: backs common/shell and common/fish ----------------
 zsh
@@ -69,9 +68,17 @@ docker-compose
 docker-buildx
 
 # --- power: backs meta/system/tlp.d/10-local.conf --------------------------
-# TLP is here for two device tweaks, not as the power manager — that is
-# power-profiles-daemon, up in the desktop tier. tlp.service must stay
-# disabled or the two fight. See the README.
+# TLP is the power manager, not power-profiles-daemon. On this laptop there is
+# no ACPI platform_profile, so PPD had only the amd_pstate knob and reported
+# `PlatformDriver: placeholder` for two of its three profiles; TLP also tunes
+# disk APM, PCIe ASPM, wifi power save and USB. TLP switches on AC/battery
+# natively, which is why no udev rule is needed for it.
 tlp
-tlpui                       # GTK editor for the above, the way xdgctl edits
+tlp-pd                      # provides= power-profiles-daemon and conflicts
+                            #   with it. Ships the UPower.PowerProfiles and
+                            #   net.hadess.PowerProfiles D-Bus interfaces, so
+                            #   noctalia's widget (Quickshell.Services.UPower)
+                            #   keeps working. CLI is tlpctl, NOT
+                            #   powerprofilesctl — that binary is gone.
+tlpui                       # GTK editor for the drop-in, the way xdgctl edits
                             #   mimeapps.list — changes show up as a diff
