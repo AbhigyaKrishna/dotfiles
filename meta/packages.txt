@@ -52,3 +52,14 @@ qt5ct                       # .profile sets QT_QPA_PLATFORMTHEME=qt5ct
 nwg-look
 xsettingsd
 ksshaskpass                 # hardcoded in .zshrc and all of environment.d
+
+# --- docker, rootless: backs the DOCKER_HOST exports in .zshrc/config.fish -
+# The daemon runs as the user, not as root. docker-rootless-extras is what
+# makes that possible; without it dockerd-rootless.sh is missing and the
+# `docker.socket` user unit in meta/systemd-user-units.txt cannot start.
+# See "Root-owned pieces" in the README for the subuid/subgid ranges this
+# also needs.
+docker
+docker-rootless-extras      # AUR - dockerd-rootless.sh, rootlesskit, slirp4netns
+docker-compose
+docker-buildx

@@ -108,9 +108,45 @@ consult. Not worth chasing unless something actually opens in the wrong place.
 `.profile` also exports `BROWSER=zen-browser`, for the terminal programs that
 read that variable instead of going through XDG.
 
+## Docker, rootless
+
+The daemon runs as the user rather than as root, so containers have no path to
+the host's root and the images live under `~/.local/share/docker` instead of
+`/var/lib/docker`. Three tracked pieces make that work:
+
+- `docker` and `docker-rootless-extras` in `meta/packages.txt`, plus
+  `docker-compose` and `docker-buildx`. The extras package is AUR-only; it
+  supplies `dockerd-rootless.sh`, `rootlesskit` and `slirp4netns`.
+- The `docker.socket` **user** unit in `meta/systemd-user-units.txt`, which
+  socket-activates the rootless `docker.service` on
+  `$XDG_RUNTIME_DIR/docker.sock`.
+- `DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock`, exported from `.zshrc`,
+  `.bashrc` and `config.fish`. The CLI defaults to `/var/run/docker.sock`, so
+  without this it talks to the wrong daemon — or to none. It is repeated per
+  shell rather than set once in `environment.d`, because `environment.d` is
+  only read by the systemd user manager and would miss ssh sessions.
+
+The subuid/subgid ranges it also needs are under "Root-owned pieces" below.
+Confirm the daemon the CLI reached is the rootless one:
+
+```sh
+docker info | grep -A1 Security   # expect `rootless` in the options
+docker info --format '{{.DockerRootDir}}'
+```
+
+Two caveats about the current machine, neither of them tracked here on purpose:
+
+- The **system** `docker.service` is also enabled, so a rootful daemon runs
+  alongside on `/var/run/docker.sock`. Nothing in this repo enables it. On a
+  rebuild it stays off unless you turn it on, and `DOCKER_HOST` keeps the CLI
+  pointed at the rootless socket either way.
+- Lingering is off (`loginctl show-user "$USER" -p Linger`), so the daemon and
+  its containers stop with the last session. `sudo loginctl enable-linger
+  "$USER"` changes that if you want containers to survive logout.
+
 ## Root-owned pieces
 
-Two things this configuration depends on live outside `$HOME`, so stow cannot
+Some things this configuration depends on live outside `$HOME`, so stow cannot
 place them. They are recorded under `meta/` and installed by hand.
 
 **sddm keyring override.** systemd services default to `KeyringMode=private`,
@@ -124,6 +160,18 @@ sudo install -Dm644 meta/system/sddm.service.d/override.conf \
   /etc/systemd/system/sddm.service.d/override.conf
 sudo systemctl daemon-reload
 ```
+
+**subuid / subgid ranges for rootless docker.** The rootless daemon maps
+container UIDs into a subordinate range owned by the user. Without an entry in
+`/etc/subuid` and `/etc/subgid`, `dockerd-rootless.sh` refuses to start. There
+is no file to install — the range is allocated per user:
+
+```sh
+sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 "$USER"
+grep "$USER" /etc/subuid /etc/subgid   # verify
+```
+
+`kernel.unprivileged_userns_clone` must also be `1`; it is the default on Arch.
 
 **Enabled systemd user units.** Recorded in `meta/systemd-user-units.txt`; see
 the fresh-machine steps above.

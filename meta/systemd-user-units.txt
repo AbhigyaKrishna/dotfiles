@@ -10,6 +10,11 @@
 
 arch-update-tray.service
 arch-update.timer
+
+# docker.socket here is the *user* socket: it activates the rootless
+# docker.service that docker-rootless-extras ships, listening on
+# $XDG_RUNTIME_DIR/docker.sock. Install the docker packages and the subuid /
+# subgid ranges (see the README) before enabling it, or it fails to start.
 docker.socket
 
 # Deliberately not listed:
