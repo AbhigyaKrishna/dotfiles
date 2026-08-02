@@ -41,3 +41,7 @@
 
 # GTK file-manager bookmarks — leak local/work paths
 **/gtk-3.0/bookmarks
+
+# fish rewrites its universal-variable file live; it cannot be a symlink.
+# Seeded from meta/fish_variables.seed instead.
+**/fish/fish_variables
