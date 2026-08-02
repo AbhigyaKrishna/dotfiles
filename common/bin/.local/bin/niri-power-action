@@ -3,7 +3,8 @@
 #
 # Modes:
 #   lid-close     Lock. On battery, suspend now if critically low, else after
-#                 LID_GRACE seconds of the lid staying shut.
+#                 LID_GRACE seconds of the lid staying shut. Does nothing at
+#                 all when an external display is attached (clamshell mode).
 #   lid-open      Cancel any pending lid-close suspend.
 #   idle-suspend  Suspend, but only when running on battery.
 #
@@ -59,6 +60,24 @@ lid_is_closed() {
     grep -qi closed /proc/acpi/button/lid/*/state 2>/dev/null
 }
 
+# Returns 0 when a display other than the laptop panel is plugged in, i.e. the
+# lid closing means clamshell mode rather than walking away. Read from DRM
+# sysfs rather than `niri msg` so this needs no JSON parser and stays correct
+# if the compositor is not answering.
+has_external_display() {
+    local s conn
+    for s in /sys/class/drm/*/status; do
+        [ -r "$s" ] || continue
+        conn=${s%/status}
+        conn=${conn##*/} # e.g. card2-eDP-1
+        case "$conn" in
+        *-eDP-* | *-LVDS-* | *-DSI-*) continue ;; # the built-in panel
+        esac
+        [ "$(cat "$s")" = "connected" ] && return 0
+    done
+    return 1
+}
+
 cancel_pending() {
     [ -f "$PIDFILE" ] || return 0
     local pid
@@ -85,6 +104,13 @@ schedule_suspend() {
 
 case "${1-}" in
 lid-close)
+    # Clamshell: an external display is attached, so the lid closing means the
+    # laptop is docked at a desk rather than being carried away. Keep working
+    # on the external screen — do not lock, do not schedule a suspend. Actually
+    # walking away is still caught by the idle stages, which lock regardless.
+    if has_external_display; then
+        exit 0
+    fi
     lock
     if ! on_ac; then
         pct=$(battery_pct)

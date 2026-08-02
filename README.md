@@ -265,6 +265,7 @@ staying awake would flatten a battery.
 | --- | --- | --- |
 | Lid closed | lock, stay running | lock, then suspend after 10 min |
 | Lid closed, battery ≤ 20% | — | lock and suspend immediately |
+| Lid closed, external display | nothing — keep working | nothing — keep working |
 | Idle 10 min | screens off | screens off |
 | Idle 11 min | lock | lock |
 | Idle 30 min | stay running | lock and suspend |
@@ -287,6 +288,29 @@ idle timeout should actually do, since that depends on power state. Its two
 tunables sit at the top of the file: `CRITICAL_PCT=20` and `LID_GRACE=600`.
 The scheduled suspend re-checks both the lid and the power state when it fires,
 so a missed `lid-open` event cannot suspend a machine that is open and in use.
+
+### Multiple monitors
+
+Locking is safe across outputs by construction: `WlSessionLock` puts a surface
+on every output and the protocol will not accept input until each one has one,
+so a second screen cannot be left showing the desktop. `lockScreenMonitors` is
+empty, which gives every screen the full lock UI; naming monitors there gives
+the unlisted ones a black screen instead. Screen-off and screen-on go through
+niri and cover every output too.
+
+Closing the lid with an external display attached does nothing at all — no
+lock, no suspend — so the laptop can sit shut on a desk driving an external
+screen. niri turns the laptop panel itself off, and knows the lid is shut from
+logind's `LidClosed` property, which `HandleLidSwitch=ignore` does not affect:
+`ignore` suppresses logind's *action*, not the property. Detection reads DRM
+sysfs (`/sys/class/drm/*/status`, skipping `eDP`/`LVDS`/`DSI`) rather than
+`niri msg`, so it needs no JSON parser and holds up if the compositor is busy.
+
+Walking away while docked is still covered — the idle stages lock at eleven
+minutes whatever the lid is doing. The one gap worth knowing: undocking while
+the lid is already shut leaves the session unlocked, because the lid-close that
+would have locked it was suppressed as clamshell. The idle stages catch it
+eleven minutes later.
 
 The idle stages come from noctalia's own idle service, configured under `idle`
 in `desktop/niri/.config/noctalia/settings.json`. Note `suspendTimeout` is `0`,
