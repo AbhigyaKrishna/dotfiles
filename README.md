@@ -198,9 +198,20 @@ which writes `~/.config/niri/monitors.kdl` from the profiles in
 with the repo — but they describe *this machine's* displays by make, model and
 serial. On a second machine, re-detect in Monique rather than reusing these.
 
-## Known wrinkle
+## Theme
 
-`~/.config/gtk-3.0/settings.ini` sets `gtk-theme-name=cachyos-nord`, while
-`.profile` exports `GTK_THEME=adw-gtk3-dark`. The environment variable wins, so
-the effective theme is `adw-gtk3-dark`. Recorded as-is rather than silently
-reconciled.
+`adw-gtk3-dark` throughout: `gtk-3.0/settings.ini`, `gtk-4.0/settings.ini`,
+`.gtkrc-2.0`, `xsettingsd.conf`, and the `GTK_THEME` export in `.profile` all
+name it.
+
+They previously all said `cachyos-nord`, a theme that is not installed and is
+not in any repo. GTK apps looked right only because `GTK_THEME` overrides the
+settings files; unset it and everything fell back to unstyled Adwaita. The
+files now state what is actually in effect.
+
+Note that `.gtkrc-2.0` carries a "DO NOT EDIT, will be overwritten by nwg-look"
+header. Running nwg-look may revert it — check `git diff` afterwards.
+
+Qt goes through `QT_QPA_PLATFORMTHEME=qt5ct` → qt5ct `style=kvantum` → Kvantum
+`theme=Nordic-Darker-Solid`. All three packages are in `meta/packages.txt`; the
+chain is inert on any machine where they are missing.

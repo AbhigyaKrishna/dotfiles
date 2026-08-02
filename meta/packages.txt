@@ -16,6 +16,8 @@ xwayland-satellite
 noctalia-shell
 quickshell
 monique                     # AUR
+polkit-kde-agent            # niri/cfg/autostart.kdl spawns
+                            #   /usr/lib/polkit-kde-authentication-agent-1
 
 # --- shells and prompt: backs common/shell and common/fish ----------------
 zsh

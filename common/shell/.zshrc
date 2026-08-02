@@ -12,9 +12,8 @@ alias ssh='kitty +kitten ssh'
 alias fzf='fzf --style full --preview "fzf-preview.sh {}" --bind "focus:transform-header:file --brief {}"'
 alias task='go-task'
 
-export SSH_ASKPASS=/usr/bin/ksshaskpass
-export GIT_ASKPASS=/usr/bin/ksshaskpass
-export SSH_ASKPASS_REQUIRE=prefer
+# SSH_ASKPASS, GIT_ASKPASS and SSH_ASKPASS_REQUIRE come from
+# ~/.config/environment.d/, which the graphical session already applies.
 export ANDROID_HOME=$HOME/Android/Sdk
 export PATH=$PATH:$ANDROID_HOME/platform-tools
 export PATH=$PATH:$ANDROID_HOME/emulator
