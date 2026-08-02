@@ -173,6 +173,25 @@ grep "$USER" /etc/subuid /etc/subgid   # verify
 
 `kernel.unprivileged_userns_clone` must also be `1`; it is the default on Arch.
 
+**Power profile switching.** `power-profiles-daemon` exposes the profiles but
+does not choose between them. A udev rule supplies that policy: on every AC
+adapter change it runs a helper that sets `performance` on the charger and
+`power-saver` on battery.
+
+```sh
+sudo install -Dm755 meta/system/bin/power-profile-auto.sh \
+  /usr/local/bin/power-profile-auto.sh
+sudo install -Dm644 meta/system/udev/99-power-profile.rules \
+  /etc/udev/rules.d/99-power-profile.rules
+sudo udevadm control --reload
+```
+
+The helper hardcodes `ACAD` as the adapter, which is this laptop's name for it.
+Other machines use `AC`, `AC0` or `ADP1`, and a desktop has none — there the
+script's file test fails and it quietly does nothing rather than misfiring.
+`ls /sys/class/power_supply/` shows the right name; the script has a comment
+saying so.
+
 **Enabled systemd user units.** Recorded in `meta/systemd-user-units.txt`; see
 the fresh-machine steps above.
 

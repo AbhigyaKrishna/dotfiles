@@ -1,0 +1,14 @@
+# Switch the power profile when the charger is plugged in or pulled out.
+#
+# power-profiles-daemon does not do this on its own: it exposes the profiles
+# but leaves the policy to something else. This rule is that policy. It fires
+# on every AC adapter state change and hands off to power-profile-auto.sh,
+# which decides which way to go.
+#
+# Not installable by stow: it belongs to root under /etc. See the README.
+#
+#   sudo install -Dm644 meta/system/udev/99-power-profile.rules \
+#     /etc/udev/rules.d/99-power-profile.rules
+#   sudo udevadm control --reload
+
+SUBSYSTEM=="power_supply", KERNEL=="AC*", ACTION=="change", RUN+="/usr/local/bin/power-profile-auto.sh"

@@ -63,3 +63,7 @@ docker
 docker-rootless-extras      # AUR - dockerd-rootless.sh, rootlesskit, slirp4netns
 docker-compose
 docker-buildx
+
+# --- power management: backs meta/system/udev/99-power-profile.rules -------
+power-profiles-daemon       # supplies powerprofilesctl, which the udev rule's
+                            #   helper script calls on every charger change
