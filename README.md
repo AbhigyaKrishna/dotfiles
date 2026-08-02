@@ -10,11 +10,11 @@ desktops means swapping one tier, not rebuilding the setup.
 ## Layout
 
 ```
-common/     always stowed — shell, terminals, CLI tools, env
+common/     always stowed — shell, terminals, CLI tools, env, scripts
 theme/      GTK/Qt look — exactly one active
 desktop/    compositor / DE — exactly one active
 profiles/   which packages each profile turns on
-meta/       things that cannot be symlinked (enabled systemd user units)
+meta/       things that cannot be symlinked (root-owned config, unit lists)
 ```
 
 Each package mirrors the path it installs to, relative to `$HOME`:
@@ -212,10 +212,15 @@ The unit file is gone by then, so systemd reports it `LoadState=not-found` while
 still `ActiveState=active`; `stop` may refuse it and the `pkill` fallback is
 what does the work. A reboot achieves the same thing.
 
-The drop-in holds the only two settings this machine changes from TLP's
+The drop-in holds the only three settings this machine changes from TLP's
 defaults: `SOUND_POWER_SAVE_ON_AC=0` stops the HDA codec sleeping on AC and
 popping at the start of playback, `USB_AUTOSUSPEND=0` stops USB devices being
-suspended out from under you. It is a drop-in rather than an edit to
+suspended out from under you (USB Bluetooth radios included), and
+`WIFI_PWR_ON_BAT=off` stops wifi power saving on battery, which TLP enables by
+default and which adds latency and stalls long-lived connections — see the lock
+section below for why that matters here. TLP sets no `DEVICES_TO_DISABLE_*`
+rules, so wifi and Bluetooth are never rfkill'd out from under the session.
+It is a drop-in rather than an edit to
 `/etc/tlp.conf` because tlp.conf is a pacman backup file and editing it earns a
 `.pacnew` on every update; `/etc/tlp.d/README` names this as the intended path.
 `tlpui` is installed for editing it. Note tlp.conf overrides the directory, so
@@ -226,6 +231,20 @@ anything scripted against it needs changing. To go back, `paru -S
 power-profiles-daemon` removes `tlp-pd` by conflict; disable `tlp.service`
 afterwards or the two will fight over the governor.
 
+**logind lid handling.** Lid events belong to niri here, not logind, so every
+`HandleLidSwitch*` is set to `ignore`. The reasoning is in the lock section
+below.
+
+```sh
+sudo install -Dm644 meta/system/logind.conf.d/10-lid.conf \
+  /etc/systemd/logind.conf.d/10-lid.conf
+sudo systemctl restart systemd-logind    # ends the graphical session
+```
+
+Restarting logind kills the session, so a reboot or a logout/login is the
+gentler way to pick it up. Drop-ins override the same keys in
+`/etc/systemd/logind.conf` and survive updates that rewrite it.
+
 **Enabled systemd units.** Recorded in `meta/systemd-user-units.txt` and
 `meta/systemd-system-units.txt`; see the fresh-machine steps above. The system
 list is deliberately not a full inventory — around thirty units are enabled on
@@ -234,6 +253,61 @@ this machine and only the ones something tracked here depends on are listed.
 There are no custom systemd unit files. `~/.config/systemd/user/` holds only
 the enable-symlinks `systemctl --user enable` creates, and everything in
 `/etc/systemd/system/` is package-owned apart from the drop-in above.
+
+## Lock, lid and idle
+
+Locking and suspending are deliberately separate here. Closing the lid or
+walking away locks the screen and nothing else — builds, downloads, music, SSH
+sessions and containers all keep running. The machine only truly suspends when
+staying awake would flatten a battery.
+
+| Trigger | On mains | On battery |
+| --- | --- | --- |
+| Lid closed | lock, stay running | lock, then suspend after 10 min |
+| Lid closed, battery ≤ 20% | — | lock and suspend immediately |
+| Idle 10 min | screens off | screens off |
+| Idle 11 min | lock | lock |
+| Idle 30 min | stay running | lock and suspend |
+
+Three pieces cooperate:
+
+**`meta/system/logind.conf.d/10-lid.conf`** takes logind out of the picture.
+The obvious `HandleLidSwitch=lock` does not work: noctalia has no logind
+integration at all — nothing in the shell listens for
+`org.freedesktop.login1`'s `Lock` signal — so logind would blank the display
+and leave the session unlocked behind it. Every `HandleLidSwitch*` is therefore
+`ignore`.
+
+**`desktop/niri/.config/niri/cfg/lid.kdl`** handles the lid instead, through
+niri's `switch-events`. `lid-close` and `lid-open` both call the script below;
+reopening the lid cancels a pending suspend.
+
+**`common/bin/.local/bin/niri-power-action`** decides what a lid close or an
+idle timeout should actually do, since that depends on power state. Its two
+tunables sit at the top of the file: `CRITICAL_PCT=20` and `LID_GRACE=600`.
+The scheduled suspend re-checks both the lid and the power state when it fires,
+so a missed `lid-open` event cannot suspend a machine that is open and in use.
+
+The idle stages come from noctalia's own idle service, configured under `idle`
+in `desktop/niri/.config/noctalia/settings.json`. Note `suspendTimeout` is `0`,
+which disables the built-in suspend stage on purpose: noctalia's suspend stage
+always calls `lockAndSuspend()` and its `suspendCommand` runs *in addition to*
+that rather than instead of it, so it cannot be made conditional. The 30-minute
+suspend is expressed as an `idle.customCommands` entry instead, which runs a
+bare command with no built-in action attached.
+
+Because the session now stays up with the lid shut, power saving that was
+harmless when the machine suspended is not any more — hence `WIFI_PWR_ON_BAT`
+and `USB_AUTOSUSPEND` being switched off in the TLP drop-in above. Wifi and
+Bluetooth stay fully connected while locked.
+
+The lock screen itself is noctalia's, tuned for as little friction as possible:
+`autoStartAuth` so the password field is live the moment it appears and there is
+nothing to click first, `lockScreenAnimations` for a fade rather than a hard
+cut, `lockScreenBlur` and `lockScreenTint` for a blurred and dimmed wallpaper,
+and `enableLockScreenMediaControls` so what is playing stays controllable.
+`allowPasswordWithFprintd` is left off — no fingerprint reader on this machine.
+`Mod+Alt+L` locks on demand.
 
 ## Adding a desktop environment
 

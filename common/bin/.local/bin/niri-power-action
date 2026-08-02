@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# niri-power-action — power-state-aware session actions for niri + noctalia.
+#
+# Modes:
+#   lid-close     Lock. On battery, suspend now if critically low, else after
+#                 LID_GRACE seconds of the lid staying shut.
+#   lid-open      Cancel any pending lid-close suspend.
+#   idle-suspend  Suspend, but only when running on battery.
+#
+# The point of all of it is that locking and suspending are separate things.
+# Closing the lid or walking away locks the screen while background work
+# (builds, downloads, music, SSH sessions) keeps running. The machine only
+# actually suspends when staying awake would drain a battery, never on mains.
+#
+# Wired up from:
+#   ~/.config/niri/cfg/lid.kdl        — switch-events { lid-close / lid-open }
+#   ~/.config/noctalia/settings.json  — idle.customCommands
+
+set -u
+
+# Battery percentage at or below which closing the lid suspends immediately
+# rather than waiting out the grace period.
+CRITICAL_PCT=20
+
+# How long the lid may stay shut on battery before suspending.
+LID_GRACE=600
+
+PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/niri-power-action.lid"
+
+lock() {
+    qs -c noctalia-shell ipc call lockScreen lock 2>/dev/null || true
+}
+
+# Returns 0 when a mains supply is plugged in and online, 1 on battery.
+on_ac() {
+    local t
+    for t in /sys/class/power_supply/*/type; do
+        [ -r "$t" ] || continue
+        [ "$(cat "$t")" = "Mains" ] || continue
+        [ "$(cat "${t%/type}/online" 2>/dev/null)" = "1" ] && return 0
+    done
+    return 1
+}
+
+# Echoes mean charge across all batteries as a percentage, or nothing at all
+# on a machine with no battery (in which case callers must not suspend).
+battery_pct() {
+    local c sum=0 n=0
+    for c in /sys/class/power_supply/*/capacity; do
+        [ -r "$c" ] || continue
+        [ "$(cat "${c%/capacity}/type" 2>/dev/null)" = "Battery" ] || continue
+        sum=$((sum + $(cat "$c")))
+        n=$((n + 1))
+    done
+    [ "$n" -gt 0 ] && echo $((sum / n))
+}
+
+lid_is_closed() {
+    grep -qi closed /proc/acpi/button/lid/*/state 2>/dev/null
+}
+
+cancel_pending() {
+    [ -f "$PIDFILE" ] || return 0
+    local pid
+    read -r pid <"$PIDFILE" 2>/dev/null || true
+    [ -n "${pid-}" ] && kill "$pid" 2>/dev/null
+    rm -f "$PIDFILE"
+    return 0
+}
+
+# Suspend once the lid has stayed shut, on battery, for the whole grace period.
+# Re-checks both conditions at fire time so a missed lid-open event cannot
+# suspend a machine that is open and in use.
+schedule_suspend() {
+    cancel_pending
+    (
+        sleep "$LID_GRACE"
+        lid_is_closed || exit 0
+        on_ac && exit 0
+        rm -f "$PIDFILE"
+        systemctl suspend
+    ) &
+    echo $! >"$PIDFILE"
+}
+
+case "${1-}" in
+lid-close)
+    lock
+    if ! on_ac; then
+        pct=$(battery_pct)
+        if [ -n "$pct" ] && [ "$pct" -le "$CRITICAL_PCT" ]; then
+            sleep 1 # let the lock surface map before the screen freezes
+            systemctl suspend
+        else
+            schedule_suspend
+        fi
+    fi
+    ;;
+lid-open)
+    cancel_pending
+    ;;
+idle-suspend)
+    # Idling on mains is free; stay awake and keep working.
+    on_ac && exit 0
+    lock
+    sleep 1
+    systemctl suspend
+    ;;
+*)
+    echo "usage: ${0##*/} {lid-close|lid-open|idle-suspend}" >&2
+    exit 2
+    ;;
+esac

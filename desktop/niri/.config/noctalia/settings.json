@@ -480,7 +480,7 @@
         "allowPasswordWithFprintd": false,
         "animationDisabled": false,
         "animationSpeed": 1,
-        "autoStartAuth": false,
+        "autoStartAuth": true,
         "avatarImage": "/home/abhigya/.face",
         "boxRadiusRatio": 1,
         "clockFormat": "hh\\nmm",
@@ -489,7 +489,7 @@
         "dimmerOpacity": 0.05,
         "enableBlurBehind": true,
         "enableLockScreenCountdown": true,
-        "enableLockScreenMediaControls": false,
+        "enableLockScreenMediaControls": true,
         "enableShadows": true,
         "forceBlackScreenCorners": false,
         "iRadiusRatio": 1,
@@ -519,12 +519,12 @@
         },
         "language": "",
         "lockOnSuspend": true,
-        "lockScreenAnimations": false,
-        "lockScreenBlur": 0,
+        "lockScreenAnimations": true,
+        "lockScreenBlur": 0.55,
         "lockScreenCountdownDuration": 10000,
         "lockScreenMonitors": [
         ],
-        "lockScreenTint": 0,
+        "lockScreenTint": 0.25,
         "passwordChars": false,
         "radiusRatio": 1,
         "reverseScroll": false,
@@ -553,8 +553,8 @@
         "wallpaperChange": ""
     },
     "idle": {
-        "customCommands": "[]",
-        "enabled": false,
+        "customCommands": "[{\"timeout\":1800,\"command\":\"$HOME/.local/bin/niri-power-action idle-suspend\",\"resumeCommand\":\"\"}]",
+        "enabled": true,
         "fadeDuration": 5,
         "lockCommand": "",
         "lockTimeout": 660,
@@ -564,7 +564,7 @@
         "screenOffCommand": "",
         "screenOffTimeout": 600,
         "suspendCommand": "",
-        "suspendTimeout": 1800
+        "suspendTimeout": 0
     },
     "location": {
         "analogClockInCalendar": false,
