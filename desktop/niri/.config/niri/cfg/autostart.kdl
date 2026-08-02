@@ -5,3 +5,4 @@
     spawn-sh-at-startup "/usr/lib/polkit-kde-authentication-agent-1 &" // Polkit
     spawn-sh-at-startup "qs -c noctalia-shell"
     spawn-sh-at-startup "/usr/bin/nirinit --save-interval 300 &"
+    spawn-sh-at-startup "xsettingsd &" // XSETTINGS for X11/XWayland apps

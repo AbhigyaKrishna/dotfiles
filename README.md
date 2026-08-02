@@ -213,5 +213,11 @@ Note that `.gtkrc-2.0` carries a "DO NOT EDIT, will be overwritten by nwg-look"
 header. Running nwg-look may revert it — check `git diff` afterwards.
 
 Qt goes through `QT_QPA_PLATFORMTHEME=qt5ct` → qt5ct `style=kvantum` → Kvantum
-`theme=Nordic-Darker-Solid`. All three packages are in `meta/packages.txt`; the
-chain is inert on any machine where they are missing.
+`theme=KvArcDark`. Both packages are in `meta/packages.txt`, and KvArcDark is
+one Kvantum ships, so the chain needs nothing extra. It was previously set to
+`Nordic-Darker-Solid`, which was never installed — Kvantum falls back silently
+rather than warning, so it looked fine while doing nothing.
+
+`xsettingsd` is spawned from `niri/cfg/autostart.kdl`. It serves the same theme
+and font settings over XSETTINGS to X11 and XWayland apps, which do not read
+`gtk-3.0/settings.ini`. Native Wayland GTK apps ignore it.

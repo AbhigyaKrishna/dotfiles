@@ -1,2 +1,4 @@
 [General]
-theme=Nordic-Darker-Solid
+# Kvantum ships this one, so it needs no extra package. Was
+# Nordic-Darker-Solid, which was never installed and silently fell back.
+theme=KvArcDark
