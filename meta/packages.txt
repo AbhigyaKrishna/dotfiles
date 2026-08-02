@@ -33,6 +33,13 @@ htop
 micro
 mpv
 
+# --- default applications: backs common/misc/.config/mimeapps.list --------
+# Without these the handlers named in mimeapps.list point at nothing.
+zen-browser-bin             # default browser: http, https, html, pdf, mailto
+sxiv                        # default image viewer: jpeg, png, gif, bmp, webp, svg
+nautilus                    # default for inode/directory
+xdgctl                      # AUR - TUI for editing these defaults
+
 # --- theming and environment: backs theme/adw-dark and common/env ---------
 adw-gtk-theme               # .profile sets GTK_THEME=adw-gtk3-dark
 kvantum

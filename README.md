@@ -76,6 +76,38 @@ Adding to the list is just a new line in `meta/packages.txt`; the script needs
 no change. The list deliberately covers only what the tracked configs need — it
 is not a full record of installed packages, which `pacman -Qqe` already gives.
 
+## Default applications
+
+Defaults live in `common/misc/.config/mimeapps.list`, tracked like any other
+config, so they travel with the repo instead of being re-clicked on every
+install. Zen is the default browser, covering http, https, html, pdf and
+mailto; sxiv handles images, mpv audio and video, Nautilus directories, kitty
+the `terminal` scheme.
+
+`xdgctl` is installed for editing them — a TUI that writes this same file, so
+changes made in it show up as a normal diff:
+
+```sh
+xdgctl              # interactive; then check what changed
+git -C ~/Projects/dotfiles diff common/misc/.config/mimeapps.list
+```
+
+To verify what a handler actually resolves to, ask the resolver applications
+use rather than trusting the file:
+
+```sh
+xdg-mime query default x-scheme-handler/http    # -> zen.desktop
+gio mime x-scheme-handler/http
+```
+
+`xdg-settings get default-web-browser` reports something different here — a
+JetBrains entry, left over from Toolbox registering itself. It is inaccurate:
+`xdg-mime` and `gio` both resolve to Zen, and those are what applications
+consult. Not worth chasing unless something actually opens in the wrong place.
+
+`.profile` also exports `BROWSER=zen-browser`, for the terminal programs that
+read that variable instead of going through XDG.
+
 ## Adding a desktop environment
 
 ```sh
