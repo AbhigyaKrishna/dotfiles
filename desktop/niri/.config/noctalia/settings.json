@@ -223,6 +223,9 @@
                     "textColor": "none"
                 },
                 {
+                    "id": "plugin:cloudflare-warp"
+                },
+                {
                     "displayMode": "alwaysShow",
                     "iconColor": "none",
                     "id": "Network",
@@ -540,7 +543,7 @@
     "hooks": {
         "colorGeneration": "",
         "darkModeChange": "",
-        "enabled": false,
+        "enabled": true,
         "performanceModeDisabled": "",
         "performanceModeEnabled": "",
         "screenLock": "",

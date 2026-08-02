@@ -108,6 +108,30 @@ consult. Not worth chasing unless something actually opens in the wrong place.
 `.profile` also exports `BROWSER=zen-browser`, for the terminal programs that
 read that variable instead of going through XDG.
 
+## Root-owned pieces
+
+Two things this configuration depends on live outside `$HOME`, so stow cannot
+place them. They are recorded under `meta/` and installed by hand.
+
+**sddm keyring override.** systemd services default to `KeyringMode=private`,
+giving sddm its own session keyring. `pam_kwallet` writes the wallet password
+there at login, so under `private` the user session never inherits it and
+kwallet cannot auto-unlock — which breaks `ksshaskpass`, and with it the
+`SSH_ASKPASS` / `GIT_ASKPASS` flow that ssh and git rely on here.
+
+```sh
+sudo install -Dm644 meta/system/sddm.service.d/override.conf \
+  /etc/systemd/system/sddm.service.d/override.conf
+sudo systemctl daemon-reload
+```
+
+**Enabled systemd user units.** Recorded in `meta/systemd-user-units.txt`; see
+the fresh-machine steps above.
+
+There are no custom systemd unit files. `~/.config/systemd/user/` holds only
+the enable-symlinks `systemctl --user enable` creates, and everything in
+`/etc/systemd/system/` is package-owned apart from the drop-in above.
+
 ## Adding a desktop environment
 
 ```sh
