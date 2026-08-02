@@ -196,6 +196,22 @@ sudo systemctl enable --now tlp.service tlp-pd.service
 tlp-stat -s                                       # expect no conflict warning
 ```
 
+Swapping in place, rather than installing fresh, needs one extra step first.
+Removing the `power-profiles-daemon` package does not stop its running daemon,
+and that process keeps ownership of both bus names. `tlp-pd.service` is
+`Type=dbus`, so it waits for names it can never get and systemd kills it at the
+15s timeout, on a restart loop — while `tlp-pd`'s own log looks perfectly
+healthy right up to "Initial profile". Stop the orphan before starting tlp-pd:
+
+```sh
+sudo systemctl stop power-profiles-daemon.service || sudo pkill -f power-profiles-daemon
+busctl --system list | grep PowerProfiles   # should name tlp-pd, not power-profiles-
+```
+
+The unit file is gone by then, so systemd reports it `LoadState=not-found` while
+still `ActiveState=active`; `stop` may refuse it and the `pkill` fallback is
+what does the work. A reboot achieves the same thing.
+
 The drop-in holds the only two settings this machine changes from TLP's
 defaults: `SOUND_POWER_SAVE_ON_AC=0` stops the HDA codec sleeping on AC and
 popping at the start of playback, `USB_AUTOSUSPEND=0` stops USB devices being
