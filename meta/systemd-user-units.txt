@@ -8,7 +8,10 @@
 # Re-enable on a fresh machine:
 #   grep -v '^#' meta/systemd-user-units.txt | xargs -r systemctl --user enable --now
 
-warp-taskbar.service
 arch-update-tray.service
 arch-update.timer
 docker.socket
+
+# Deliberately not listed:
+#   warp-taskbar.service - enabled on this machine, but not wanted on a
+#     rebuild. Do not re-add it from a live `systemctl --user` listing.
