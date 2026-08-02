@@ -38,6 +38,9 @@ mpv
 zen-browser-bin             # default browser: http, https, html, pdf, mailto
 sxiv                        # default image viewer: jpeg, png, gif, bmp, webp, svg
 nautilus                    # default for inode/directory
+visual-studio-code-insiders-bin  # AUR - default editor: text/plain, markdown,
+                            #   go, python, js, c, shell, sql; .zshrc aliases
+                            #   code to code-insiders
 xdgctl                      # AUR - TUI for editing these defaults
 
 # --- theming and environment: backs theme/adw-dark and common/env ---------
