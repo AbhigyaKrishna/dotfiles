@@ -67,3 +67,11 @@ docker
 docker-rootless-extras      # AUR - dockerd-rootless.sh, rootlesskit, slirp4netns
 docker-compose
 docker-buildx
+
+# --- power: backs meta/system/tlp.d/10-local.conf --------------------------
+# TLP is here for two device tweaks, not as the power manager — that is
+# power-profiles-daemon, up in the desktop tier. tlp.service must stay
+# disabled or the two fight. See the README.
+tlp
+tlpui                       # GTK editor for the above, the way xdgctl edits
+                            #   mimeapps.list — changes show up as a diff

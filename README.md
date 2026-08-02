@@ -195,6 +195,38 @@ script's file test fails and it quietly does nothing rather than misfiring.
 `ls /sys/class/power_supply/` shows the right name; the script has a comment
 saying so.
 
+**TLP, as device tweaks only.** TLP is installed but is *not* the power
+manager — `power-profiles-daemon` is. The two are mutually exclusive as profile
+managers, so `tlp.service` stays disabled; enabling it makes them fight over
+the governor and the platform profile, and `tlp-stat -s` reports the clash.
+What TLP contributes is two settings that are not profile settings and overlap
+with nothing PPD touches: `SOUND_POWER_SAVE_ON_AC=0` stops the HDA codec
+sleeping on AC and popping at the start of playback, and `USB_AUTOSUSPEND=0`
+stops USB devices being suspended out from under you.
+
+```sh
+sudo install -Dm644 meta/system/tlp.d/10-local.conf /etc/tlp.d/10-local.conf
+sudo tlp start
+```
+
+A drop-in rather than `/etc/tlp.conf`, because tlp.conf is a pacman backup file
+and editing it earns a `.pacnew` on every update. `/etc/tlp.d/README` documents
+this as the intended path. `tlpui` is installed for editing it.
+
+**These two settings do not survive a reboot.** Applying them is what
+`tlp.service` would do, and it is disabled, so they only take effect when TLP
+is run by hand. If that matters, the way to make them stick without handing
+power management back to TLP is to set them at the module level instead, which
+takes effect at boot and does not involve TLP at all:
+
+```sh
+echo 'options snd_hda_intel power_save=0' | sudo tee /etc/modprobe.d/audio.conf
+echo 'options usbcore autosuspend=-1'     | sudo tee /etc/modprobe.d/usb.conf
+```
+
+That is not what is deployed here; the drop-in above is. Recorded as the known
+alternative rather than applied silently.
+
 **Enabled systemd user units.** Recorded in `meta/systemd-user-units.txt`; see
 the fresh-machine steps above.
 
