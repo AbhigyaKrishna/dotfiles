@@ -1,0 +1,19 @@
+[user]
+	email = abhigyakrishna21@gmail.com
+	name = AbhigyaKrishna
+	signingkey = C2347C0B36876168
+[core]
+	autocrlf = input
+	ui = true
+	preloadindex = false
+	filemode = true
+[safe]
+	directory = *
+[init]
+	defaultbranch = main
+[gpg]
+	program = gpg
+[commit]
+	gpgsign = true
+[tag]
+	gpgsign = true

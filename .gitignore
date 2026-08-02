@@ -1,0 +1,43 @@
+# ---------------------------------------------------------------------------
+# Secrets — never commit. This repo is public.
+# ---------------------------------------------------------------------------
+**/gh/hosts.yml
+**/*.key
+**/*.pem
+**/*.gpg
+**/id_rsa*
+**/id_ecdsa*
+**/id_ed25519*
+**/*token*
+**/*secret*
+**/*credential*
+**/.env
+**/.netrc
+
+# ---------------------------------------------------------------------------
+# Deliberately kept local — see README "What is not tracked"
+# ---------------------------------------------------------------------------
+**/micro/syntax/
+**/noctalia/plugins/
+**/polychromatic/devices/
+**/polychromatic/states/
+
+# ---------------------------------------------------------------------------
+# Churn that stow folding can drag in (apps writing into folded directories)
+# ---------------------------------------------------------------------------
+*.bak
+*.old
+*.swp
+*.tmp
+*~
+*.log
+**/buffers/
+**/cache/
+**/Cache/
+**/*history*
+**/*.pid
+**/*.sock
+.DS_Store
+
+# GTK file-manager bookmarks — leak local/work paths
+**/gtk-3.0/bookmarks
