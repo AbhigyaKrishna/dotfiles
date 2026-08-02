@@ -415,6 +415,32 @@ on the right card. From a shell:
 gamerun vulkaninfo --summary | grep -m1 deviceName   # expect NVIDIA
 ```
 
+`common/env/.config/environment.d/path.conf` is what lets Steam find `gamerun`
+by name. Shell rc files are no help — nothing launched from the compositor
+sources them — and a missing `~/.local/bin` on the session PATH means the game
+simply does not start.
+
+### Steam launch options
+
+Steam keeps these in `localconfig.vdf`, which it rewrites constantly and fills
+with unrelated state, so it is not tracked here. Recorded instead, to be put
+back by hand after a reinstall. **Steam must be closed while editing that file
+or it overwrites the change on exit.**
+
+| Game | Launch options |
+| --- | --- |
+| THE FINALS | `VKD3D_CONFIG=no_upload_hvv gamescope -w 1920 -h 1080 -W 1920 -H 1080 -f -s 1.8 --force-grab-cursor --backend=wayland -- gamerun %command%` |
+| War Robots | `DXVK_ASYNC=1 SDL_MOUSE_RELATIVE_SPEED_SCALE=1.0 gamescope -f -w 1920 -h 1080 -W 1920 -H 1080 --force-grab-cursor -- gamerun %command%` |
+| anything else | `gamerun %command%` |
+
+Note where `gamerun` sits relative to gamescope: **inside** it, after the `--`.
+That leaves gamescope on the iGPU, which is what drives the display, and
+offloads only the game to the RTX 3050 — the ordinary PRIME arrangement.
+Wrapping gamescope itself works too and is the form `gamerun --help` describes,
+but it makes gamescope render on NVIDIA and then present across to the iGPU,
+which is the slower and more fragile path. Worth trying the other way round
+only if a game misbehaves.
+
 `gamemode` matters more here than on a desktop because TLP is the power manager
 and is deliberately conservative; gamemode raises the governor for the session
 and restores it after. Its one wrinkle is that TLP re-applies on a power-source
