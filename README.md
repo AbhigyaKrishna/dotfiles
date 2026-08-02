@@ -42,9 +42,11 @@ switching desktops is a single command.
 ## On a fresh machine
 
 ```sh
-sudo pacman -S stow
+sudo pacman -S --needed git stow
 git clone git@github.com:AbhigyaKrishna/dotfiles.git ~/Projects/dotfiles
-cd ~/Projects/dotfiles && ./bootstrap.sh niri
+cd ~/Projects/dotfiles
+./install-packages.sh          # -n first to see what it would do
+./bootstrap.sh niri
 cp meta/fish_variables.seed ~/.config/fish/fish_variables   # see below
 grep -v '^#' meta/systemd-user-units.txt | xargs -r systemctl --user enable --now
 fisher update     # restores fish plugins listed in fish_plugins
@@ -52,6 +54,27 @@ fisher update     # restores fish plugins listed in fish_plugins
 
 Stow refuses to overwrite a real file. If a fresh install has already written a
 config, move it aside and re-run.
+
+## Packages
+
+`meta/packages.txt` lists the packages the tracked configuration depends on,
+grouped by the stow package they back. `install-packages.sh` reads it, installs
+only what is missing, and bootstraps paru first when absent — one entry
+(`monique`) exists only in the AUR, and CachyOS ships paru in its own repo, so
+on a fresh CachyOS install that is a single `pacman -S`.
+
+```sh
+./install-packages.sh -n     # list what is missing, change nothing
+./install-packages.sh        # install it
+./install-packages.sh -y     # no confirmation prompts
+```
+
+The script reports what remains uninstalled and exits non-zero rather than
+claiming success, since paru can skip a package.
+
+Adding to the list is just a new line in `meta/packages.txt`; the script needs
+no change. The list deliberately covers only what the tracked configs need — it
+is not a full record of installed packages, which `pacman -Qqe` already gives.
 
 ## Adding a desktop environment
 

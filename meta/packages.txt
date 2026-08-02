@@ -1,0 +1,42 @@
+# Packages backing the tracked configuration.
+#
+# One package per line. Blank lines and #-comments are ignored.
+# Installed by ./install-packages.sh, which reads this file.
+#
+# Everything here is in the official/CachyOS repos except monique (AUR),
+# which is why the installer uses paru rather than plain pacman.
+
+# --- core: without these the repo cannot bootstrap itself ------------------
+stow
+git
+
+# --- desktop: backs desktop/niri ------------------------------------------
+niri
+xwayland-satellite
+noctalia-shell
+quickshell
+monique                     # AUR
+
+# --- shells and prompt: backs common/shell and common/fish ----------------
+zsh
+zsh-theme-powerlevel10k
+fish
+fisher
+nvm                         # .zshrc and .bashrc source /usr/share/nvm/init-nvm.sh
+fzf
+
+# --- terminals and CLI: backs common/terminals and common/cli -------------
+kitty                       # .zshrc aliases ssh through `kitty +kitten ssh`
+alacritty                   # .profile sets TERM=alacritty
+btop
+htop
+micro
+mpv
+
+# --- theming and environment: backs theme/adw-dark and common/env ---------
+adw-gtk-theme               # .profile sets GTK_THEME=adw-gtk3-dark
+kvantum
+qt5ct                       # .profile sets QT_QPA_PLATFORMTHEME=qt5ct
+nwg-look
+xsettingsd
+ksshaskpass                 # hardcoded in .zshrc and all of environment.d
