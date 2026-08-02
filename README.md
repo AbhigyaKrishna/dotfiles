@@ -10,7 +10,7 @@ desktops means swapping one tier, not rebuilding the setup.
 ## Layout
 
 ```
-common/     always stowed — shell, terminals, CLI tools, hardware, env
+common/     always stowed — shell, terminals, CLI tools, env
 theme/      GTK/Qt look — exactly one active
 desktop/    compositor / DE — exactly one active
 profiles/   which packages each profile turns on
@@ -82,7 +82,7 @@ desktop packages.
 | `.config/systemd/user/` | generated enable-symlinks; see `meta/systemd-user-units.txt` |
 | `.config/vesktop/`, `.config/zen/` | 4 GB of browser and app profile data |
 | `.config/mpv/` | empty |
-| `.config/noisetorch/`, `.config/openrazer/` | written by their own daemons and tied to this machine's devices |
+| `.config/noisetorch/`, `.config/openrazer/`, `.config/polychromatic/` | written by their own daemons and tied to this machine's devices |
 | `.config/fish/fish_variables` | see below — seeded from `meta/fish_variables.seed` |
 
 ### fish_variables

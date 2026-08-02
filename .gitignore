@@ -49,3 +49,6 @@
 # Daemon-managed hardware config, kept local
 **/noisetorch/
 **/openrazer/
+
+# Polychromatic — device-bound, kept local
+**/polychromatic/
