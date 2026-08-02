@@ -12,3 +12,23 @@
 	match title="wayprompt"
 	open-floating true
     }
+
+    // ─── Games ───
+    // Steam gives each game an app-id of steam_app_<id>; gamescope-wrapped
+    // launches show up as gamescope instead, so both are matched.
+    //
+    // open-on-output puts them on the Acer, which is both the larger and the
+    // faster panel — 180Hz against the laptop's 144. niri falls back to the
+    // focused output when it is not connected, so this is safe undocked.
+    //
+    // variable-refresh-rate marks these windows as the ones VRR is for. It is
+    // inert today: Monique's niri backend collapses on-demand VRR to plain
+    // always-on (models.py, "if self.vrr != VRR.OFF"), so the Acer runs VRR
+    // full time regardless. The rule is here so this starts behaving properly
+    // the moment Monique emits on-demand. See the README.
+    window-rule {
+	match app-id=r#"^steam_app_"#
+	match app-id=r#"^gamescope$"#
+	open-on-output "Acer Technologies ED240Q S3 234006B6B3W01"
+	variable-refresh-rate true
+    }

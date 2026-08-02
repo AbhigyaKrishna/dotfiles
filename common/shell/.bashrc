@@ -15,3 +15,9 @@ export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock
 . "$HOME/.cargo/env"
 
 source /usr/share/nvm/init-nvm.sh
+
+# Per-directory environment from .envrc, opt-in per project via `direnv allow`.
+command -v direnv >/dev/null && eval "$(direnv hook bash)"
+
+# Shell history with fuzzy search and stats, as in .zshrc and config.fish.
+command -v atuin >/dev/null && eval "$(atuin init bash --disable-up-arrow)"

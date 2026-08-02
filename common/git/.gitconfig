@@ -7,6 +7,21 @@
 	ui = true
 	preloadindex = false
 	filemode = true
+	pager = delta
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+	line-numbers = true
+	hyperlinks = true
+	; Follow the terminal rather than pinning a theme, so this matches the
+	; adw-dark/light switch instead of fighting it.
+	syntax-theme = ansi
+[merge]
+	conflictstyle = zdiff3
+[diff]
+	colorMoved = default
+	algorithm = histogram
 [safe]
 	directory = *
 [init]

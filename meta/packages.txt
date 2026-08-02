@@ -116,3 +116,42 @@ fwupd                       # firmware updates: fwupdmgr refresh, then
                             #   culprit when fwupd breaks a boot. If Secure
                             #   Boot is ever enabled, apply dbx first and set
                             #   up signing (sbctl) after, not the reverse.
+
+# --- gaming -----------------------------------------------------------------
+# This box is hybrid: an AMD Vega iGPU and an RTX 3050. Vulkan enumerates the
+# iGPU first, so a game launched without PRIME offload renders on it silently.
+# common/bin/.local/bin/gamerun is the wrapper that stops that happening, and
+# these are what it composes.
+steam
+lutris
+wine
+gamemode                    # performance governor + scheduling for the
+                            #   duration of a game, restored on exit. Matters
+                            #   here because TLP is deliberately conservative;
+                            #   config in common/gaming/.config/gamemode.ini
+lib32-gamemode              # 32-bit games and the Steam runtime need this too,
+                            #   or gamemoderun silently does nothing for them
+mangohud                    # overlay; its gpu_name field is how you confirm a
+                            #   game really is on the NVIDIA card
+lib32-mangohud
+gamescope
+nvidia-prime                # provides prime-run
+nvidia-utils
+lib32-nvidia-utils
+nvidia-settings
+                            # xwayland-satellite is in the desktop section
+                            # above. It matters here too: niri has no built-in
+                            # XWayland, so without it every X11 game and Steam
+                            # itself fail to start. niri spawns it when present.
+
+# --- dev tooling ------------------------------------------------------------
+# Hooked into the shells and .gitconfig, so installing these changes behaviour
+# rather than just adding binaries.
+direnv                      # per-directory env from .envrc; hooked in .zshrc,
+                            #   .bashrc and config.fish
+atuin                       # shell history with fuzzy search, hooked in all
+                            #   three shells with --disable-up-arrow
+git-delta                   # wired into .gitconfig as core.pager and
+                            #   interactive.diffFilter — removing the package
+                            #   without editing .gitconfig breaks `git diff`
+lazygit

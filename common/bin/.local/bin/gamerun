@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# gamerun — launch a game on the discrete GPU with the usual wrappers.
+#
+# This machine is hybrid: an AMD Vega iGPU and an RTX 3050. The iGPU is what
+# Vulkan enumerates first, so anything launched without PRIME offload renders
+# on it — silently, at a large cost. Rather than repeating the environment in
+# every game's launch options and watching them drift apart, put this in front:
+#
+#   Steam launch options:  gamerun %command%
+#
+# It composes, in order:
+#   prime-run     render on the RTX 3050 rather than the Vega iGPU
+#   gamemoderun   performance governor and scheduling for the session, which
+#                 matters here because TLP is deliberately conservative
+#   mangohud      overlay — its GPU name field is how you confirm the game
+#                 really is on the NVIDIA card
+#
+# Any of them can be dropped for one launch:
+#   GAMERUN_HUD=0 gamerun %command%
+#   GAMERUN_PRIME=0 gamerun %command%
+#   GAMERUN_GAMEMODE=0 gamerun %command%
+#
+# With gamescope there are two sensible arrangements. Wrapping the whole thing
+# puts gamescope on the NVIDIA card too, since prime-run works by exporting
+# variables that children inherit:
+#
+#   gamerun gamescope -f -W 1920 -H 1080 --force-grab-cursor -- %command%
+#
+# Or leave gamescope on the iGPU and offload only the game, which is worth
+# trying if gamescope itself misbehaves on NVIDIA:
+#
+#   gamescope -f -W 1920 -H 1080 --force-grab-cursor -- gamerun %command%
+#
+# Missing wrappers are skipped rather than fatal, so this still runs the game
+# on a machine where gamemode or mangohud is not installed.
+
+set -u
+
+wrap=()
+
+want() { [ "${1:-1}" != 0 ]; }
+
+if want "${GAMERUN_PRIME:-1}" && command -v prime-run >/dev/null 2>&1; then
+    wrap+=(prime-run)
+fi
+if want "${GAMERUN_GAMEMODE:-1}" && command -v gamemoderun >/dev/null 2>&1; then
+    wrap+=(gamemoderun)
+fi
+if want "${GAMERUN_HUD:-1}" && command -v mangohud >/dev/null 2>&1; then
+    wrap+=(mangohud)
+fi
+
+if [ "$#" -eq 0 ]; then
+    echo "usage: ${0##*/} <command> [args...]" >&2
+    echo "would run: ${wrap[*]-<nothing>} <command>" >&2
+    exit 2
+fi
+
+exec ${wrap[@]+"${wrap[@]}"} "$@"

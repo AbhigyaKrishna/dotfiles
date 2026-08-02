@@ -23,6 +23,11 @@ input {
             // jumping the cursor mid-sentence. Not on by default in niri.
     }
 
-    focus-follows-mouse // Automatically focus windows under the mouse pointer
+    // Focus what the pointer is over, but never scroll the view to do it.
+    // Without the limit, nudging the mouse toward the second monitor can pull
+    // focus off a game that has not grabbed the cursor — losing keyboard input
+    // mid-match. gamescope's --force-grab-cursor already covers wrapped
+    // launches; this is for everything else.
+    focus-follows-mouse max-scroll-amount="0%"
     workspace-auto-back-and-forth // Enable workspace back & forth switching
 }

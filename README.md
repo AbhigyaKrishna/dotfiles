@@ -388,6 +388,69 @@ systemctl --user show app.slice -p DropInPaths -p ManagedOOMMemoryPressure
 journalctl -u systemd-oomd            # what it killed, and why
 ```
 
+## Gaming
+
+The machine is hybrid — an AMD Vega iGPU and an RTX 3050 — and **Vulkan
+enumerates the iGPU first**. Anything launched without PRIME offload therefore
+renders on the Vega, silently and slowly. That is the problem
+`common/bin/.local/bin/gamerun` exists to remove:
+
+```
+Steam launch options:   gamerun %command%
+with gamescope:         gamerun gamescope -f -W 1920 -H 1080 --force-grab-cursor -- %command%
+```
+
+It composes `prime-run`, `gamemoderun` and `mangohud`, skipping any that are
+not installed, and each can be dropped for a single launch with
+`GAMERUN_PRIME=0`, `GAMERUN_GAMEMODE=0` or `GAMERUN_HUD=0`. The point is that
+the environment lives in one place instead of being retyped per game and
+drifting apart — which is exactly what had happened: of four games with launch
+options set, only one carried PRIME offload.
+
+Confirm it worked from the overlay. `gpu_name` is in the MangoHud config for
+precisely this reason: if the corner says NVIDIA GeForce RTX 3050, the game is
+on the right card. From a shell:
+
+```sh
+gamerun vulkaninfo --summary | grep -m1 deviceName   # expect NVIDIA
+```
+
+`gamemode` matters more here than on a desktop because TLP is the power manager
+and is deliberately conservative; gamemode raises the governor for the session
+and restores it after. Its one wrinkle is that TLP re-applies on a power-source
+change, so plugging in mid-game resets the governor underneath it.
+
+### VRR, and why it is not on-demand
+
+The Acer is a 180Hz FreeSync panel and the laptop panel reports
+`vrr_supported=false`, so VRR is set on the Acer only — in the **Monique
+profile**, not in niri's config. Two findings forced that:
+
+- niri does not merge two `output` blocks for the same display; the later one
+  replaces the earlier wholesale. An output block in `cfg/display.kdl` carrying
+  only a VRR line moved the laptop panel from Monique's `x=2409 y=-84` to
+  `x=0 y=0`. Since Monique owns `monitors.kdl` and it is included last, any
+  per-output setting has to go through Monique or be destroyed by it.
+- Monique models on-demand VRR (`VRR.FULLSCREEN = 2`) but its niri backend
+  emits a bare `variable-refresh-rate` for any non-off value
+  (`models.py:339`), so **the Acer runs VRR full time**, not only for games.
+
+Always-on VRR makes some panels flicker in brightness at idle. If that shows
+up, set `vrr` back to `0` in the profile. The `variable-refresh-rate` window
+rule for games in `cfg/rules.kdl` is inert until Monique emits on-demand, and
+is there so this starts behaving correctly when it does.
+
+### Dual monitor
+
+Games open on the Acer via `open-on-output` in `cfg/rules.kdl`, matching both
+`steam_app_*` and gamescope windows; niri falls back to the focused output when
+it is not connected, so it is safe undocked.
+
+`focus-follows-mouse` is capped with `max-scroll-amount="0%"`. Without the cap,
+nudging the pointer toward the second screen can pull focus off a game that has
+not grabbed the cursor, taking keyboard input with it. gamescope's
+`--force-grab-cursor` already covers wrapped launches; the cap is for the rest.
+
 ## Adding a desktop environment
 
 ```sh

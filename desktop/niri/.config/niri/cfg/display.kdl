@@ -1,9 +1,18 @@
 // ────────────── Output Configuration ──────────────
-// You can run `niri msg outputs` to get the correct name for your displays.
-// You will have to remove "/-" and edit it before it takes effect.
+// Run `niri msg outputs` for the names.
 // https://github.com/YaLTeR/niri/wiki/Configuration:-Outputs
-
-/- output "DP-1" {
-    mode "2560x1440@359.979" // Set resolution and refresh rate
-    scale 1 // No scaling (use 2 for HiDPI)
-}
+//
+// Deliberately empty of output blocks. Monique owns all of them, in
+// monitors.kdl, which config.kdl includes after this file — and niri does NOT
+// merge two blocks for the same output. The later one replaces the earlier
+// wholesale.
+//
+// That was measured rather than assumed: an output block here for the laptop
+// panel, carrying nothing but a variable-refresh-rate line, moved it from
+// Monique's x=2409 y=-84 to x=0 y=0. Anything added here silently discards the
+// mode, scale and position Monique wrote.
+//
+// Per-output settings therefore belong in the Monique profile under
+// desktop/niri/.config/monique/profiles/, which regenerates monitors.kdl with
+// every field together. The Acer's VRR is set there — see the gaming section
+// of the README for what Monique does and does not emit for niri.

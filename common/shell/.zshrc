@@ -37,3 +37,10 @@ export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock
 unsetopt correct_all
 
 source /usr/share/nvm/init-nvm.sh
+
+# Per-directory environment from .envrc, opt-in per project via `direnv allow`.
+command -v direnv >/dev/null && eval "$(direnv hook zsh)"
+
+# Shell history with fuzzy search and stats. --disable-up-arrow keeps plain up
+# for the last command; Ctrl-R opens atuin.
+command -v atuin >/dev/null && eval "$(atuin init zsh --disable-up-arrow)"
