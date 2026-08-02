@@ -173,10 +173,13 @@ grep "$USER" /etc/subuid /etc/subgid   # verify
 
 `kernel.unprivileged_userns_clone` must also be `1`; it is the default on Arch.
 
-**Power profile switching.** `power-profiles-daemon` exposes the profiles but
-does not choose between them. A udev rule supplies that policy: on every AC
-adapter change it runs a helper that sets `performance` on the charger and
-`power-saver` on battery.
+**Power profile switching.** `power-profiles-daemon` comes in with the desktop
+tier — it is an optdepend of `noctalia-shell`, and the bar's `PowerProfile`
+widget reads and sets profiles through it. It exposes the profiles but does not
+choose between them, so switching stays manual, from the widget. This udev rule
+adds the automatic half: on every AC adapter change it runs a helper that sets
+`performance` on the charger and `power-saver` on battery. The widget still
+works without the rule; the rule needs the package the widget already pulls in.
 
 ```sh
 sudo install -Dm755 meta/system/bin/power-profile-auto.sh \

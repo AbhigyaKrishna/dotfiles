@@ -1,9 +1,10 @@
 # Switch the power profile when the charger is plugged in or pulled out.
 #
-# power-profiles-daemon does not do this on its own: it exposes the profiles
-# but leaves the policy to something else. This rule is that policy. It fires
-# on every AC adapter state change and hands off to power-profile-auto.sh,
-# which decides which way to go.
+# power-profiles-daemon is already present for the desktop tier — it is an
+# optdepend of noctalia-shell, whose bar has a PowerProfile widget. The daemon
+# exposes the profiles but does not choose between them, and the widget only
+# makes that choice manual. This rule automates it: it fires on every AC
+# adapter state change and hands off to power-profile-auto.sh.
 #
 # Not installable by stow: it belongs to root under /etc. See the README.
 #

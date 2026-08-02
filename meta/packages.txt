@@ -18,6 +18,10 @@ quickshell
 monique                     # AUR
 polkit-kde-agent            # niri/cfg/autostart.kdl spawns
                             #   /usr/lib/polkit-kde-authentication-agent-1
+power-profiles-daemon       # optdepend of noctalia-shell; noctalia/settings.json
+                            #   sets showPowerProfiles and puts a PowerProfile
+                            #   widget in the bar. meta/system/udev/
+                            #   99-power-profile.rules also drives it.
 
 # --- shells and prompt: backs common/shell and common/fish ----------------
 zsh
@@ -63,7 +67,3 @@ docker
 docker-rootless-extras      # AUR - dockerd-rootless.sh, rootlesskit, slirp4netns
 docker-compose
 docker-buildx
-
-# --- power management: backs meta/system/udev/99-power-profile.rules -------
-power-profiles-daemon       # supplies powerprofilesctl, which the udev rule's
-                            #   helper script calls on every charger change
