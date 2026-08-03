@@ -14,6 +14,19 @@
 **/.env
 **/.netrc
 
+# gnupg: the stow package tracks *.conf only. Everything below is key material
+# or per-machine state and must never land in a public repo. Belt and braces —
+# nothing here is copied in deliberately, this is to catch a stray `cp -r`.
+**/.gnupg/private-keys-v1.d/
+**/.gnupg/openpgp-revocs.d/
+**/.gnupg/crls.d/
+**/.gnupg/public-keys.d/
+**/.gnupg/*.kbx
+**/.gnupg/*.kbx~
+**/.gnupg/random_seed
+**/.gnupg/*.lock
+**/.gnupg/S.*
+
 # ---------------------------------------------------------------------------
 # Deliberately kept local — see README "What is not tracked"
 # ---------------------------------------------------------------------------

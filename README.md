@@ -158,24 +158,58 @@ and KWallet — `kwalletd6` from niri's autostart and `ksecretd` from
 `pam_kwallet5` in `/etc/pam.d/sddm` — which is where the occasional second
 unlock prompt in a different toolkit's style came from. gnome-keyring is the
 one that matters: it owns `org.freedesktop.secrets`, so every Secret Service
-client already stores there. The KWallet entries left on disk (Chromium and
-Code Insiders safe storage, a GnuPG passphrase, a JetBrains account) date from
-before that and have not been written since June.
+client already stores there. KWallet is now gone entirely.
 
-`/etc/pam.d/sddm` belongs to the sddm package and has no drop-in mechanism, so
-rather than edit it, remove the module it loads. Every `pam_kwallet5` line
-there is prefixed `-`, which tells PAM to skip the module silently when it is
-missing:
+Removing `kwallet-pam` took away the half that unlocked the wallet at login,
+but left consumers still asking for it — VS Code Insiders had
+`"password-store": "kwallet6"` in `~/.vscode-insiders/argv.json`, which
+D-Bus-activated `kwalletd6` on every launch and then failed against a wallet
+nothing could open. Point such clients at gnome-keyring instead
+(`gnome-libsecret` for anything Electron/Chromium-based).
+
+Electron stores its safe-storage key under libsecret schema
+`chrome_libsecret_os_crypt_password_v2`, keyed on an `application` attribute
+holding the app name — `Code - Insiders`, matching the old KWallet folder
+`Code - Insiders Keys`. Copying the value across before switching preserves
+saved sign-ins; a fresh key would silently invalidate them.
+
+`/etc/pam.d/sddm` belongs to the sddm package and has no drop-in mechanism.
+Every `pam_kwallet5` line there is prefixed `-`, so PAM skips the module
+silently once it is missing — but the dead lines are commented out anyway so
+the file matches reality. That is a local edit to a packaged file: expect a
+`.pacnew` to merge on sddm upgrades.
 
 ```sh
-sudo pacman -Rns kwallet-pam
+sudo pacman -Rns kwallet-pam   # already done
+sudo pacman -Rs  kwallet       # takes qca-qt6, qt6-5compat, qt6-shadertools,
+                               # kcolorscheme, kguiaddons with it
 ```
 
-The `kwallet` package itself has to stay — `jetbrains-toolbox` depends on it —
-but nothing starts a daemon from it once the autostart line and `kwallet-pam`
-are gone. `~/.local/share/kwalletd/kdewallet.kwl` is deliberately left in
-place: nothing reads it while no daemon runs, and it is the only way back if
-something turns out to have been stored there after all.
+`jetbrains-toolbox` and `qtkeychain-qt6` depend on the *virtual*
+`org.freedesktop.secrets`, not on `kwallet` by name, and gnome-keyring provides
+it — so removing `kwallet` does not drag them out. (An earlier note here
+claimed `kwallet` had to stay for Toolbox; that was wrong.) `ksshaskpass`
+survives for the same reason and reaches gnome-keyring through qtkeychain.
+
+`~/.local/share/kwalletd/` is deleted. The wallet, its salt, and the plaintext
+of all four entries are archived under
+`~/.local/share/kwallet-removed-backup-2026-08-04/` in case something turns out
+to have depended on it.
+
+**One casualty worth knowing about.** `pacman -Rs kwallet` also collects
+`kguiaddons` as an orphan, and `pinentry-qt` links against
+`libKF6GuiAddons.so.6` — so GPG signing dies with a missing-library error the
+next time a passphrase is actually needed. A cached passphrase hides this, so
+`git commit` can keep working for a while and then fail. The `gnupg` package
+now selects the gnome3 backend, which fits the rest of the consolidation and
+uses `gcr-prompter`:
+
+```
+pinentry-program /usr/bin/pinentry-gnome3
+```
+
+Check any pinentry with `printf 'BYE\n' | pinentry-<flavour>` — a working one
+answers `OK Pleased to meet you`.
 
 **sddm keyring override.** systemd services default to `KeyringMode=private`,
 giving sddm its own session keyring, so a PAM module that puts a secret there

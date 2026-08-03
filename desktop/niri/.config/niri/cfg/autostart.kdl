@@ -5,9 +5,9 @@
     // on this machine — check with `busctl --user list | grep secrets` — so
     // every Secret Service client already stores there, and a second wallet
     // daemon only produced a second unlock prompt in a different toolkit's
-    // style. The leftover ~/.local/share/kwalletd/kdewallet.kwl is kept rather
-    // than deleted; nothing reads it while no daemon runs. See the keyring
-    // note under "Root-owned pieces" for the kwallet-pam half of this.
+    // style. KWallet is now uninstalled and ~/.local/share/kwalletd/ deleted,
+    // so there is nothing left to D-Bus-activate. See the keyring note under
+    // "Root-owned pieces" for the pam and client-config halves of this.
     spawn-sh-at-startup "/usr/lib/polkit-kde-authentication-agent-1 &" // Polkit
     spawn-sh-at-startup "qs -c noctalia-shell"
     spawn-sh-at-startup "/usr/bin/nirinit --save-interval 300 &"

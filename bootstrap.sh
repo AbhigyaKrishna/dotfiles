@@ -88,6 +88,19 @@ unfold_dropin_dirs() {
   done < <(find "$pkgdir" -type d -path '*/.config/systemd/*' -name '*.d' -print0 2>/dev/null)
 }
 
+# Same folding problem, different blast radius: on a machine where ~/.gnupg does
+# not exist yet, stow would link the whole directory into the repo — leaving gpg
+# with a 755 world-readable home it refuses to trust, and pointing the path that
+# private keys get written to at a public git repo. Create it 700 for real first
+# so stow only links the .conf files inside.
+unfold_private_dirs() {
+  local pkgdir="$1" d
+  ((DRY)) && return 0
+  while IFS= read -r -d '' d; do
+    install -d -m 700 "$TARGET/${d#"$pkgdir/"}"
+  done < <(find "$pkgdir" -type d -name '.gnupg' -print0 2>/dev/null)
+}
+
 info "applying profile '$PROFILE'"
 
 for tier in "${TIERS[@]}"; do
@@ -107,7 +120,10 @@ for tier in "${TIERS[@]}"; do
 
   if ((${#want[@]})); then
     printf '  %-8s %s\n' "$tier" "${want[*]}"
-    for w in "${want[@]}"; do unfold_dropin_dirs "$REPO/$tier/$w"; done
+    for w in "${want[@]}"; do
+      unfold_dropin_dirs  "$REPO/$tier/$w"
+      unfold_private_dirs "$REPO/$tier/$w"
+    done
     stow "${STOW_FLAGS[@]}" -d "$REPO/$tier" -t "$TARGET" "${want[@]}"
   fi
 done

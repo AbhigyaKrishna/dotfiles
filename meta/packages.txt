@@ -65,6 +65,18 @@ qt5ct                       # .profile sets QT_QPA_PLATFORMTHEME=qt5ct
 nwg-look
 xsettingsd
 ksshaskpass                 # hardcoded in .zshrc and all of environment.d
+                            # reaches gnome-keyring via qtkeychain-qt6, which
+                            # needs org.freedesktop.secrets, not kwallet
+
+# --- secrets and signing: backs common/gnupg ------------------------------
+# gnome-keyring is the only Secret Service on this box; kwallet is uninstalled.
+# gpg-agent.conf names pinentry-gnome3 by absolute path, so `pinentry` must be
+# present or every signed commit fails once the passphrase cache expires.
+# Do NOT switch this to pinentry-qt: it links libKF6GuiAddons, which pacman
+# reaps as an orphan the moment nothing KDE is installed.
+gnome-keyring
+pinentry
+libsecret                   # git credential.helper = git-credential-libsecret
 
 # --- docker, rootless: backs the DOCKER_HOST exports in .zshrc/config.fish -
 # The daemon runs as the user, not as root. docker-rootless-extras is what
