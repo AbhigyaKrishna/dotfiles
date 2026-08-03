@@ -223,6 +223,11 @@
                     "textColor": "none"
                 },
                 {
+                    "defaultSettings": {
+                        "connectedColor": "primary",
+                        "disconnectedColor": "none",
+                        "refreshInterval": 5000
+                    },
                     "id": "plugin:cloudflare-warp"
                 },
                 {
