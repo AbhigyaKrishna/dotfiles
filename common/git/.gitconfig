@@ -32,3 +32,8 @@
 	gpgsign = true
 [tag]
 	gpgsign = true
+[credential]
+	; Store HTTPS credentials in gnome-keyring, which owns
+	; org.freedesktop.secrets here. Without a helper, git falls back to
+	; GIT_ASKPASS and re-prompts every push, caching nothing.
+	helper = /usr/lib/git-core/git-credential-libsecret

@@ -1,5 +1,9 @@
     prefer-no-csd
-    screenshot-path null
+
+    // Screenshots land on disk as well as the clipboard. With `null` here they
+    // were clipboard-only, so one was lost the moment anything else was copied
+    // — including by the wl-paste watcher that feeds cliphist.
+    screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 
     environment {
         ELECTRON_OZONE_PLATFORM_HINT "auto"
@@ -8,6 +12,13 @@
         XDG_SESSION_TYPE "wayland"
         XDG_CURRENT_DESKTOP "niri"
         QT_QPA_PLATFORMTHEME "gtk3"
+
+        // XWayland clients read the cursor from these, not from GTK settings,
+        // so without them X11 apps fall back to the default X arrow at the
+        // wrong size while every Wayland window looks correct. Kept in step
+        // with gtk-cursor-theme-name / -size in ~/.config/gtk-3.0/settings.ini.
+        XCURSOR_THEME "Adwaita"
+        XCURSOR_SIZE "24"
     }
 
     debug {

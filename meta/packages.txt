@@ -21,6 +21,16 @@ polkit-kde-agent            # niri/cfg/autostart.kdl spawns
                             # noctalia's PowerProfile widget needs a
                             # power-profiles-daemon; tlp-pd supplies it, in the
                             # power section below.
+wl-clip-persist             # niri/cfg/autostart.kdl spawns it. Wayland ties
+                            # clipboard ownership to the window that set it, so
+                            # closing the source app empties the clipboard.
+                            # cliphist keeps the history either way, but only
+                            # reachable through the picker — this is what makes
+                            # a plain Ctrl+V still work afterwards.
+                            # Note xwayland-satellite above is NOT started from
+                            # autostart.kdl and its systemd user unit is
+                            # deliberately left disabled: niri 26.04 spawns it
+                            # itself. Enabling the unit gives two of them.
 
 # --- shells and prompt: backs common/shell and common/fish ----------------
 zsh

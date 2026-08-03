@@ -153,11 +153,36 @@ Two caveats about the current machine, neither of them tracked here on purpose:
 Some things this configuration depends on live outside `$HOME`, so stow cannot
 place them. They are recorded under `meta/` and installed by hand.
 
+**One keyring, not two.** This session used to run both `gnome-keyring-daemon`
+and KWallet — `kwalletd6` from niri's autostart and `ksecretd` from
+`pam_kwallet5` in `/etc/pam.d/sddm` — which is where the occasional second
+unlock prompt in a different toolkit's style came from. gnome-keyring is the
+one that matters: it owns `org.freedesktop.secrets`, so every Secret Service
+client already stores there. The KWallet entries left on disk (Chromium and
+Code Insiders safe storage, a GnuPG passphrase, a JetBrains account) date from
+before that and have not been written since June.
+
+`/etc/pam.d/sddm` belongs to the sddm package and has no drop-in mechanism, so
+rather than edit it, remove the module it loads. Every `pam_kwallet5` line
+there is prefixed `-`, which tells PAM to skip the module silently when it is
+missing:
+
+```sh
+sudo pacman -Rns kwallet-pam
+```
+
+The `kwallet` package itself has to stay — `jetbrains-toolbox` depends on it —
+but nothing starts a daemon from it once the autostart line and `kwallet-pam`
+are gone. `~/.local/share/kwalletd/kdewallet.kwl` is deliberately left in
+place: nothing reads it while no daemon runs, and it is the only way back if
+something turns out to have been stored there after all.
+
 **sddm keyring override.** systemd services default to `KeyringMode=private`,
-giving sddm its own session keyring. `pam_kwallet` writes the wallet password
-there at login, so under `private` the user session never inherits it and
-kwallet cannot auto-unlock — which breaks `ksshaskpass`, and with it the
-`SSH_ASKPASS` / `GIT_ASKPASS` flow that ssh and git rely on here.
+giving sddm its own session keyring, so a PAM module that puts a secret there
+at login leaves the user session unable to see it. This was installed for
+`pam_kwallet`; with that gone, `pam_gnome_keyring` is the remaining consumer.
+The override is kept, but it has *not* been re-verified against `private` since
+the switch — worth checking before assuming it still does anything.
 
 ```sh
 sudo install -Dm644 meta/system/sddm.service.d/override.conf \
@@ -422,6 +447,54 @@ cut, `lockScreenBlur` and `lockScreenTint` for a blurred and dimmed wallpaper,
 and `enableLockScreenMediaControls` so what is playing stays controllable.
 `allowPasswordWithFprintd` is left off — no fingerprint reader on this machine.
 `Mod+Alt+L` locks on demand.
+
+## Wayland rough edges
+
+A handful of things that are not niri's fault but land on the user anyway, and
+what is done about each.
+
+**The clipboard used to empty when the source window closed.** Wayland ties
+clipboard ownership to the surface that set it, so quitting the app you copied
+from takes the clipboard with it. The `wl-paste --watch cliphist store` pair in
+noctalia's `appLauncher` settings keeps the *history* regardless, but recovering
+from it means opening the picker — a plain `Ctrl+V` in the next window pastes
+nothing at all, which is the part that feels broken. `wl-clip-persist`, spawned
+from `cfg/autostart.kdl`, holds ownership open instead. It runs with
+`--clipboard regular`: doing the same to the primary selection makes every
+accidental text drag fight with middle-click paste.
+
+**XWayland clients read the cursor from the environment**, not from GTK
+settings, so `XCURSOR_THEME` and `XCURSOR_SIZE` are set in `cfg/misc.kdl`
+alongside the Qt and Electron variables. Without them X11 windows get the
+default X arrow at the wrong size while every Wayland window looks right. They
+must stay in step with `gtk-cursor-theme-name` and `gtk-cursor-theme-size` in
+`~/.config/gtk-3.0/settings.ini`. Note that Xwayland inherits its environment
+when it starts, so changing these needs a re-login rather than a config reload.
+
+**Xwayland itself is not started from anywhere in this repo.** niri 26.04
+spawns `xwayland-satellite` on its own, which is why `cfg/autostart.kdl` has no
+line for it and the `xwayland-satellite.service` user unit is deliberately left
+disabled. Enabling that unit gives two of them fighting over the same display.
+
+**Screen sharing works through `xdg-desktop-portal-gnome`**, which looks wrong
+until you see why: niri implements Mutter's D-Bus API for exactly this, and
+`busctl --user list` shows `org.gnome.Mutter.ScreenCast` and
+`org.gnome.Mutter.DisplayConfig` owned by the niri process. That is what
+`default=gnome;gtk` in `/usr/share/xdg-desktop-portal/niri-portals.conf` is
+selecting. There is nothing to fix here; it is written down so it is not
+"fixed" later.
+
+**Screenshots go to disk as well as the clipboard.** `screenshot-path` was
+`null`, meaning clipboard-only — and since the `wl-paste` watcher feeds every
+clipboard change into cliphist, a screenshot survived only until the next copy.
+`Print`, `Shift+Print` and `Alt+Print` now do the three capture modes, next to
+the original `CTRL+Shift+1/2/3`.
+
+**Nothing keeps the machine awake for a long build.** niri honours idle
+inhibitors and noctalia's idle stages respect them — Quickshell's `IdleMonitor`
+defaults `respectInhibitors` to true and noctalia does not override it — so a
+video that takes an inhibitor already holds off the ten-minute lock. A compile
+does not. `Mod+Shift+I` toggles noctalia's inhibitor by hand for those.
 
 ## Memory pressure
 
