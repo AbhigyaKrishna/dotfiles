@@ -13,6 +13,25 @@
 	open-floating true
     }
 
+    // ─── Picture-in-picture ───
+    // A PiP window is a video the size of a postage stamp; tiled into a column
+    // it either squashes the real work or gets squashed by it, which defeats
+    // the entire point of detaching it. Float it instead — floating windows sit
+    // above the tiled layout in niri, so it behaves like the always-on-top
+    // overlay it is meant to be.
+    //
+    // Two titles because the browsers disagree on the hyphens: Firefox and its
+    // derivatives (zen here) use "Picture-in-Picture", Chromium and Electron
+    // apps use "Picture in picture". Matching on title rather than app-id is
+    // deliberate — the PiP window carries the same app-id as the main browser
+    // window, so an app-id match would float the browser too.
+    window-rule {
+	match title="^Picture-in-Picture$"
+	match title="^Picture in picture$"
+	open-floating true
+	default-floating-position x=32 y=32 relative-to="bottom-right"
+    }
+
     // ─── Games ───
     // Steam gives each game an app-id of steam_app_<id>; gamescope-wrapped
     // launches show up as gamescope instead, so both are matched.

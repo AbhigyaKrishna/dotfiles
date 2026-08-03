@@ -15,6 +15,10 @@ binds {
     // wl-paste watchers that feed cliphist whether or not anything ever opens
     // the picker. This is only the way in.
     Mod+V                               hotkey-overlay-title="Clipboard History: noctalia launcher" { spawn-sh "qs -c noctalia-shell ipc call launcher clipboard"; }
+    // Fuzzy search across every open window by title. The Mod+arrow and
+    // Mod+number binds cover moving around a layout you can see; this is for
+    // the window you know the name of and not the position of.
+    Mod+Shift+TAB                       hotkey-overlay-title="Window Switcher: noctalia launcher" { spawn-sh "qs -c noctalia-shell ipc call launcher windows"; }
     Mod+B                               hotkey-overlay-title="Open Browser: zen" { spawn "zen-browser"; }
     Mod+ALT+L                           hotkey-overlay-title="Lock Screen: noctalia lock" { spawn-sh "qs -c noctalia-shell ipc call lockScreen lock"; }
     Mod+Shift+Q                         hotkey-overlay-title="Session Menu: noctalia sessionMenu" { spawn-sh "qs -c noctalia-shell ipc call sessionMenu toggle"; }
