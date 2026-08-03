@@ -11,6 +11,10 @@ binds {
     // ─── Applications ───
     Mod+Return                          hotkey-overlay-title="Open Terminal: Kitty" { spawn "kitty"; }
     Mod+Space                           hotkey-overlay-title="Open App Launcher: noctalia launcher" { spawn-sh "qs -c noctalia-shell ipc call launcher toggle"; }
+    // The history itself is always being recorded — noctalia runs the
+    // wl-paste watchers that feed cliphist whether or not anything ever opens
+    // the picker. This is only the way in.
+    Mod+V                               hotkey-overlay-title="Clipboard History: noctalia launcher" { spawn-sh "qs -c noctalia-shell ipc call launcher clipboard"; }
     Mod+B                               hotkey-overlay-title="Open Browser: zen" { spawn "zen-browser"; }
     Mod+ALT+L                           hotkey-overlay-title="Lock Screen: noctalia lock" { spawn-sh "qs -c noctalia-shell ipc call lockScreen lock"; }
     Mod+Shift+Q                         hotkey-overlay-title="Session Menu: noctalia sessionMenu" { spawn-sh "qs -c noctalia-shell ipc call sessionMenu toggle"; }
