@@ -75,8 +75,24 @@ lid_is_closed() {
 # Suspend to RAM, then hibernate once it has been asleep a while — see
 # meta/system/sleep.conf.d/10-hibernate.conf. Falls back to a plain suspend so
 # a machine that cannot hibernate still sleeps rather than staying awake.
+#
+# The fallback is chosen up front rather than written as
+# `systemctl suspend-then-hibernate || systemctl suspend`, because these
+# commands do not return when the machine goes to sleep — they return when the
+# whole sleep cycle ENDS, which is after it wakes. A `||` therefore fires its
+# right-hand side one second after a resume and puts the machine straight back
+# to sleep, before the display has finished coming back. That is
+# indistinguishable from a freeze: the screen sits there, and pressing the
+# power button again just hits a machine that is already asleep. It cost a
+# hard reset on 2026-08-04 (see the double `PM: suspend entry` in that boot).
+# Ask first, run exactly one sleep command, never chain.
 sleep_now() {
-    systemctl suspend-then-hibernate || systemctl suspend
+    if [ "$(busctl call org.freedesktop.login1 /org/freedesktop/login1 \
+            org.freedesktop.login1.Manager CanSuspendThenHibernate 2>/dev/null)" = 's "yes"' ]; then
+        systemctl suspend-then-hibernate
+    else
+        systemctl suspend
+    fi
 }
 
 # Returns 0 when a display other than the laptop panel is plugged in, i.e. the
