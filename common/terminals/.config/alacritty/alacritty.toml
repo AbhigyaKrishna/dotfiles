@@ -162,6 +162,3 @@ action = "ResetFontSize"
 [general]
 live_config_reload = true
 working_directory = "None"
-# Wallpaper-driven colours from Noctalia (regenerated file, gitignored).
-# live_config_reload above means a wallpaper change retints without a restart.
-import = ["~/.config/alacritty/themes/noctalia.toml"]

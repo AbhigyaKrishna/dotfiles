@@ -68,14 +68,13 @@
 
 # ---------------------------------------------------------------------------
 # Wallpaper-driven theme output (Noctalia template engine).
-# These regenerate on every wallpaper change and are written THROUGH stow-folded
-# symlinks into the repo (e.g. ~/.config/gtk-3.0 -> theme/adw-dark/.config/gtk-3.0).
+# GTK is the only app driven by the wallpaper here — terminals (kitty/alacritty/
+# btop) were deliberately kept on their static curated themes, because a palette
+# derived from a wallpaper is not tuned for terminal legibility. These GTK files
+# regenerate on every wallpaper change and are written THROUGH stow-folded
+# symlinks into the repo (~/.config/gtk-3.0 -> theme/adw-dark/.config/gtk-3.0).
 # Derived state, not dotfiles — see docs/superpowers/specs/2026-08-18-wallpaper-driven-theming-design.md
 # ---------------------------------------------------------------------------
-**/kitty/themes/noctalia.conf
-**/kitty/current-theme.conf
-**/alacritty/themes/noctalia.toml
-**/btop/themes/noctalia.theme
 **/gtk-3.0/noctalia.css
 **/gtk-3.0/gtk.css
 **/gtk-4.0/noctalia.css
