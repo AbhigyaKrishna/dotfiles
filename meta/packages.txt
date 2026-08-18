@@ -31,6 +31,22 @@ wl-clip-persist             # niri/cfg/autostart.kdl spawns it. Wayland ties
                             # autostart.kdl and its systemd user unit is
                             # deliberately left disabled: niri 26.04 spawns it
                             # itself. Enabling the unit gives two of them.
+cliphist                    # the clipboard-history store behind Mod+V. noctalia
+                            # runs the wl-paste watchers that feed it, but the
+                            # store itself is cliphist; it is NOT a
+                            # noctalia-shell dependency (checked: pacman -Qi),
+                            # so without it named here the picker opens empty on
+                            # a fresh machine and Mod+V does nothing.
+xdg-desktop-portal-gnome    # ScreenCast portal backend for niri — this is what
+                            # makes "share screen" work in the browser and
+                            # Vesktop. niri has no portal of its own; without a
+                            # backend the share dialog never appears.
+xdg-desktop-portal-gtk      # GTK file-chooser + Settings portal backend, so
+                            # native open/save dialogs and the org.freedesktop
+                            # Settings interface work under niri.
+                            #   xdg-desktop-portal itself is pulled in as a
+                            #   dependency of pipewire; only the backends have
+                            #   to be chosen, and these are the two in use here.
 
 # --- shells and prompt: backs common/shell and common/fish ----------------
 zsh
@@ -60,6 +76,11 @@ xdgctl                      # AUR - TUI for editing these defaults
 
 # --- theming and environment: backs theme/adw-dark and common/env ---------
 adw-gtk-theme               # .profile sets GTK_THEME=adw-gtk3-dark
+ttf-meslo-nerd              # nerd-font glyphs shared by two consumers: the
+                            # noctalia bar (module icons) and the powerlevel10k
+                            # prompt. MesloLGS NF is the face p10k's configure
+                            # wizard installs and expects; without a nerd font
+                            # both render icon codepoints as tofu boxes.
 kvantum
 qt5ct                       # .profile sets QT_QPA_PLATFORMTHEME=qt5ct
 nwg-look
@@ -138,6 +159,23 @@ fwupd                       # firmware updates: fwupdmgr refresh, then
                             #   culprit when fwupd breaks a boot. If Secure
                             #   Boot is ever enabled, apply dbx first and set
                             #   up signing (sbctl) after, not the reverse.
+
+# --- audio: backs common/audio and common/systemd/mic-gain.service ---------
+# The PipeWire stack itself is assumed present (CachyOS ships it). These are
+# the pieces this repo's audio config pulls in that are NOT guaranteed by that.
+wireplumber                 # session manager. common/audio drops a bluez
+                            #   policy (51-bluez.conf) into its config.d and
+                            #   registers the rnnoise filter as a smart filter
+                            #   through it. Usually pulled in by pipewire-pulse;
+                            #   named here because the config edits it directly.
+noise-suppression-for-voice # the RNNoise LADSPA plugin at
+                            #   /usr/lib/ladspa/librnnoise_ladspa.so that
+                            #   99-rnnoise-source.conf loads. That module is
+                            #   flagged nofail/ifexists, so without this the
+                            #   "Noise Canceling Source" simply never appears —
+                            #   no error, just a missing input.
+alsa-utils                  # amixer, called by mic-gain.service to zero the
+                            #   'Internal Mic Boost' analog gain on every login.
 
 # --- gaming -----------------------------------------------------------------
 # This box is hybrid: an AMD Vega iGPU and an RTX 3050. Vulkan enumerates the
