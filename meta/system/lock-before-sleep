@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# lock-before-sleep — lock every active graphical session before the machine
+# sleeps. Invoked by lock-before-sleep.service (Before=sleep.target).
+#
+# See lock-before-sleep.service for the full reasoning. In short: noctalia does
+# not listen for logind's Lock signal, and niri-power-action only locks the
+# suspends it starts itself — this catches the session-menu Suspend button and
+# any hand-typed `systemctl suspend`, which would otherwise sleep unlocked.
+#
+# qs's IPC client only needs XDG_RUNTIME_DIR to reach the running shell's
+# socket (it does not open a Wayland connection), so runuser + XDG_RUNTIME_DIR
+# is all the environment it takes. Everything is best-effort: a session that
+# cannot be locked must not block the sleep, so failures are swallowed.
+
+set -u
+
+locked=0
+while read -r id; do
+    [ -n "$id" ] || continue
+    [ "$(loginctl show-session "$id" -p Type --value)" = wayland ] || continue
+    uid=$(loginctl show-session "$id" -p User --value)
+    user=$(loginctl show-session "$id" -p Name --value)
+    [ -n "$uid" ] && [ -n "$user" ] || continue
+    runuser -u "$user" -- env XDG_RUNTIME_DIR="/run/user/$uid" \
+        qs -c noctalia-shell ipc call lockScreen lock 2>/dev/null && locked=1
+done < <(loginctl --no-legend list-sessions | awk '{print $1}')
+
+# Give the lock surface a beat to map before the freeze, so resume never
+# flashes the desktop first — same reason niri-power-action sleeps after lock.
+# Only worth waiting if something was actually asked to lock.
+[ "$locked" = 1 ] && sleep 1
+
+exit 0

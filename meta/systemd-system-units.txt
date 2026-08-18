@@ -47,3 +47,10 @@ snapper-timeline.timer
 # 15-ec2xxx there), so this is mostly about being covered if that changes or a
 # component vendor starts publishing.
 fwupd-refresh.timer
+
+# Locks the graphical session Before=sleep.target, so a suspend that does not
+# go through niri-power-action (the noctalia session-menu button, a hand-typed
+# `systemctl suspend`) can never sleep an unlocked session. See the unit and
+# its helper in meta/system/ — both have to be installed first (they are not
+# stowed and the helper lives in /usr/local/bin), then this enabled.
+lock-before-sleep.service

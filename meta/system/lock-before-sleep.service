@@ -1,0 +1,52 @@
+# Lock the graphical session before the machine sleeps.
+#
+# The problem this closes: noctalia has no logind integration — it never
+# listens for org.freedesktop.login1's Lock signal (this is the same gap that
+# lid.kdl and niri-power-action already work around by hand). niri-power-action
+# does lock before the suspends IT starts (lid-close, idle-suspend both call
+# `lock` first), so the lid, idle and low-battery paths are already covered.
+#
+# What is NOT covered is any suspend that does not go through that script: the
+# noctalia session-menu Suspend button, and a plain `systemctl suspend` typed
+# by hand. Those would sleep an unlocked session and resume unlocked.
+#
+# This unit is the belt-and-suspenders that makes ALL of them lock. It orders
+# Before=sleep.target, and because it is Type=oneshot systemd blocks the sleep
+# transition until ExecStart returns — so the lock surface is guaranteed up
+# before the machine freezes. sleep.target is pulled in by suspend.target,
+# hibernate.target, hybrid-sleep.target and suspend-then-hibernate.target, so
+# this one unit covers every one of them, including the suspend-then-hibernate
+# that niri-power-action prefers.
+#
+# Why a SYSTEM unit and not a user one: on this systemd (261) the user manager
+# has no sleep.target at all (`systemctl --user list-unit-files sleep.target`
+# is empty and /usr/lib/systemd/user/sleep.target does not exist), so the usual
+# `WantedBy=sleep.target` user unit never fires. The hook has to live in the
+# system manager. The work itself is done as the logged-in user by the helper
+# script — see lock-before-sleep for how it reaches the running shell from root.
+#
+# Not installable by stow: it belongs to root under /etc, and it runs a helper
+# that belongs to root under /usr/local/bin. Install both, then enable:
+#
+#   sudo install -Dm755 meta/system/lock-before-sleep \
+#     /usr/local/bin/lock-before-sleep
+#   sudo install -Dm644 meta/system/lock-before-sleep.service \
+#     /etc/systemd/system/lock-before-sleep.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable lock-before-sleep.service
+#
+# Test without a real suspend by starting it directly — it should lock the
+# screen: `sudo systemctl start lock-before-sleep.service`. Then confirm the
+# real path once with `systemctl suspend` and check you resume to the lock.
+
+[Unit]
+Description=Lock the graphical session before sleep
+Documentation=man:systemd-suspend.service(8)
+Before=sleep.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/lock-before-sleep
+
+[Install]
+WantedBy=sleep.target
