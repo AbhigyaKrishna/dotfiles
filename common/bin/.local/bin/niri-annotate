@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# niri-annotate — screenshot a selected region straight into the satty annotator.
+#
+# grim pipes the region into satty, where you draw arrows / boxes / blur / text.
+# On save satty writes a PNG to ~/Pictures/Screenshots and copies the annotated
+# image to the clipboard; --early-exit closes it after the first save so it
+# behaves like a one-shot snip tool. Bound to Mod+Shift+S in
+# niri/cfg/keybinds.kdl. Requires: grim slurp satty wl-clipboard.
+set -euo pipefail
+
+region=$(slurp) || exit 0   # cancelled selection → quiet exit
+
+dir="$HOME/Pictures/Screenshots"
+mkdir -p "$dir"
+# %F/%T via date, not strftime in satty, so the name matches the niri
+# screenshot-path convention in niri/cfg/misc.kdl.
+out="$dir/Annotated $(date '+%Y-%m-%d %H-%M-%S').png"
+
+grim -g "$region" - | satty --filename - \
+    --output-filename "$out" \
+    --copy-command wl-copy \
+    --early-exit

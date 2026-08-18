@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# niri-color-pick — eyedropper: pick a pixel's colour, hex on the clipboard.
+#
+# hyprpicker magnifies under the cursor; -f hex sets the format and -r prints
+# to stdout instead of autocopying, so wl-copy owns the clipboard write and the
+# value can be echoed in the toast. Bound to Mod+Shift+C in
+# niri/cfg/keybinds.kdl. hyprpicker speaks wlr-screencopy, which niri supports.
+# Requires: hyprpicker wl-clipboard libnotify.
+set -euo pipefail
+
+# hyprpicker exits non-zero when the pick is cancelled (Esc); exit quietly.
+hex=$(hyprpicker -f hex -r) || exit 0
+[ -n "$hex" ] || exit 0
+
+printf '%s' "$hex" | wl-copy
+notify-send "Colour picker" "$hex copied to the clipboard" 2>/dev/null || true

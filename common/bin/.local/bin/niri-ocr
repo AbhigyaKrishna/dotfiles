@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# niri-ocr — OCR a selected screen region to the clipboard.
+#
+# grim grabs the region slurp draws; tesseract reads text out of it; wl-copy
+# puts that on the clipboard so a plain Ctrl+V pastes it. Bound to Mod+Shift+O
+# in niri/cfg/keybinds.kdl. Requires: grim slurp tesseract tesseract-data-eng
+# wl-clipboard libnotify.
+set -euo pipefail
+
+# slurp returns non-zero when the selection is cancelled (Esc); exit quietly
+# rather than letting `set -e` surface it as a failure toast.
+region=$(slurp) || exit 0
+
+img=$(mktemp --suffix=.png)
+trap 'rm -f "$img"' EXIT
+
+grim -g "$region" "$img"
+
+# tesseract writes to <outputbase>; "-" means stdout. Strip the trailing
+# newline it always appends so the clipboard holds exactly the recognised text.
+text=$(tesseract "$img" - 2>/dev/null)
+text=${text%$'\n'}
+
+if [ -z "$text" ]; then
+    notify-send "OCR" "No text found in the selection" 2>/dev/null || true
+    exit 0
+fi
+
+printf '%s' "$text" | wl-copy
+notify-send "OCR" "Copied ${#text} characters to the clipboard" 2>/dev/null || true

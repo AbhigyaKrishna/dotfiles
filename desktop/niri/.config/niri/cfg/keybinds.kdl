@@ -138,6 +138,17 @@ binds {
     CTRL+Shift+2                        { screenshot-screen; }
     CTRL+Shift+3                        { screenshot-window; }
 
+    // ─── Capture & Tools ───
+    // niri's own screenshots above go to file + clipboard. These add the three
+    // things it does not do, each a small script in ~/.local/bin (common/bin):
+    //   annotate — draw on a region before saving (satty)
+    //   OCR      — pull text out of a region to the clipboard (tesseract)
+    //   colour   — eyedropper a pixel's hex to the clipboard (hyprpicker)
+    // Screen recording is deliberately absent: noctalia already provides it.
+    Mod+Shift+S                         hotkey-overlay-title="Annotate Region: satty" { spawn "niri-annotate"; }
+    Mod+Shift+O                         hotkey-overlay-title="OCR Region to Clipboard: tesseract" { spawn "niri-ocr"; }
+    Mod+Shift+C                         hotkey-overlay-title="Colour Picker: hyprpicker" { spawn "niri-color-pick"; }
+
     // ─── Keep Awake ───
     // niri honours idle inhibitors and noctalia's idle stages respect them, so
     // a video that takes one out already holds off the lock. Nothing does that

@@ -221,3 +221,22 @@ git-delta                   # wired into .gitconfig as core.pager and
                             #   interactive.diffFilter — removing the package
                             #   without editing .gitconfig breaks `git diff`
 lazygit
+
+# --- capture & desktop tools: back the binds in niri/cfg/keybinds.kdl -------
+# Three keybinds (Mod+Shift+S/O/C) drive the scripts in common/bin — annotate,
+# OCR, colour-pick. Without these packages the binds spawn a missing binary and
+# do nothing.
+grim                        # region screenshot backend (grim -g "$(slurp)")
+slurp                       # the drag-to-select region picker
+satty                       # screenshot annotator behind niri-annotate
+tesseract                   # OCR engine behind niri-ocr
+tesseract-data-eng          # English model — tesseract does nothing without a
+                            #   language pack, and it is not bundled
+hyprpicker                  # screen colour picker behind niri-color-pick. Speaks
+                            #   wlr-screencopy, so it works under niri.
+wl-clipboard                # wl-copy — the annotate/OCR/colour scripts put their
+                            #   result on the clipboard with it. Also what
+                            #   cliphist and wl-clip-persist build on.
+libnotify                   # notify-send — the OCR and colour-pick scripts toast
+                            #   their result through it (noctalia serves the
+                            #   org.freedesktop.Notifications side)
