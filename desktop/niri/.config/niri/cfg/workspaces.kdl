@@ -1,0 +1,23 @@
+// ────────────── Named Workspaces ──────────────
+// https://github.com/YaLTeR/niri/wiki/Configuration:-Named-Workspaces
+//
+// Three persistent, named workspaces. Unlike the dynamic workspaces these
+// always exist, and they take the low indices — so Mod+1/2/3 reach them while
+// Mod+4.. still cover the dynamic ones that keep spawning below for terminals
+// and everything else.
+//
+// Index order note: on a fresh niri start these follow declaration order
+// (web=1, code=2, chat=3). A live config-reload instead inserts each named
+// workspace at the top as it is read, so mid-session they can show reversed
+// (chat=1, code=2, web=3) until the next login. This is cosmetic only — the
+// open-on-workspace rules below match by NAME, so app routing is identical
+// either way.
+//
+// Apps are steered onto these by open-on-workspace rules in cfg/rules.kdl:
+// zen → web, GoLand / VSCode Insiders → code, Beeper → chat. Terminals are
+// deliberately left unassigned; kitty is spread across many workspaces and
+// pinning it would fight that.
+
+workspace "web"
+workspace "code"
+workspace "chat"
