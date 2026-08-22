@@ -166,7 +166,7 @@
                     "showAlbumArt": true,
                     "showArtistFirst": true,
                     "showProgressRing": true,
-                    "showVisualizer": false,
+                    "showVisualizer": true,
                     "textColor": "none",
                     "useFixedWidth": false,
                     "visualizerType": "linear"
@@ -814,12 +814,12 @@
         "wallhavenApiKey": "",
         "wallhavenCategories": "111",
         "wallhavenOrder": "desc",
-        "wallhavenPurity": "100",
-        "wallhavenQuery": "halo",
+        "wallhavenPurity": "000",
+        "wallhavenQuery": "",
         "wallhavenRatios": "",
-        "wallhavenResolutionHeight": "",
+        "wallhavenResolutionHeight": "1080",
         "wallhavenResolutionMode": "atleast",
-        "wallhavenResolutionWidth": "",
+        "wallhavenResolutionWidth": "1920",
         "wallhavenSorting": "relevance",
         "wallpaperChangeMode": "random"
     }
