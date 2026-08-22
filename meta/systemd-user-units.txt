@@ -20,3 +20,6 @@ docker.socket
 # Deliberately not listed:
 #   warp-taskbar.service - enabled on this machine, but not wanted on a
 #     rebuild. Do not re-add it from a live `systemctl --user` listing.
+
+# Resets the internal mic analog boost (see common/systemd) on login.
+mic-gain.service

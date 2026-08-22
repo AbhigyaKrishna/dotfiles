@@ -1,0 +1,18 @@
+[Unit]
+Description=Tame internal mic analog gain
+Documentation=man:amixer(1)
+After=pipewire.service
+PartOf=graphical-session.target
+
+# The internal mic ships with 'Internal Mic Boost' at 3/3 (+30 dB) stacked on
+# 'Capture' at +30 dB -- about +60 dB of analog gain, which mostly amplifies
+# hiss. PipeWire manages 'Capture' but never touches the boost control, so it
+# has to be reset here on every login.
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/amixer -c Generic sset 'Internal Mic Boost' 0
+
+[Install]
+WantedBy=default.target
