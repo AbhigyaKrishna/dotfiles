@@ -81,6 +81,10 @@ ttf-meslo-nerd              # nerd-font glyphs shared by two consumers: the
                             # prompt. MesloLGS NF is the face p10k's configure
                             # wizard installs and expects; without a nerd font
                             # both render icon codepoints as tofu boxes.
+ttf-jetbrains-mono-nerd     # primary coding face for kitty + alacritty (the
+                            # "JetBrainsMono Nerd Font Mono" family). ligatures
+                            # + patched glyph coverage; set in the terminals'
+                            # styling.conf / alacritty.toml.
 kvantum
 qt5ct                       # .profile sets QT_QPA_PLATFORMTHEME=qt5ct
 nwg-look
