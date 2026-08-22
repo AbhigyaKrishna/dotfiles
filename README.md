@@ -328,6 +328,45 @@ sudo install -Dm644 meta/system/sleep.conf.d/10-hibernate.conf \
 sudo systemctl restart systemd-oomd
 ```
 
+**Disk health monitoring (smartd).** The default `/etc/smartd.conf` is a bare
+`DEVICESCAN` — it watches the drives but has no alert path and runs no
+self-tests, so a failing disk stays silent. This machine has a reason to care:
+the SATA SSD at `/dev/sda` once threw catastrophic I/O errors and dropped off
+the bus. The replacement config runs a short self-test daily and a long one
+weekly on every SMART-capable drive, and routes alerts through
+`smartd-notify` — there is no MTA here, so `-m <nomailer>` kills the email path
+and `-M exec` sends a journald line plus a critical desktop notification
+instead. `-M test` fires that path once at startup so a reboot doubles as a
+wiring check; drop the token once you have seen it work. The reasoning lives in
+the two files' headers.
+
+```sh
+sudo install -Dm755 meta/system/smartd-notify /usr/local/bin/smartd-notify
+sudo install -Dm644 meta/system/smartd.conf   /etc/smartd.conf
+sudo systemctl enable --now smartd.service
+journalctl -t smartd -f    # the test alert should land here on start
+```
+
+**Home snapshots (snapper).** snapper is configured for the root subvolume
+only, via the `root` config and `snap-pac`. `@home` is a separate subvolume, so
+until now nothing snapshotted `/home` — code, notes and research had no
+recovery points. `meta/system/snapper-home` creates and configures a `home`
+config with timeline snapshots (5 hourly, 7 daily, mirroring `root`), the one
+difference being `TIMELINE_CREATE=yes`: root leaves it off because `snap-pac`
+covers its meaningful moments, but `/home` has no such trigger so the timeline
+is the mechanism. The existing `snapper-timeline.timer` and
+`snapper-cleanup.timer` already iterate every config, so no new units are
+needed. `limine-snapper-sync` is scoped to `/@/.snapshots`, so these
+`/home/.snapshots` never reach the boot menu — they are for file recovery, not
+booting. The script is idempotent and grants the invoking user ACL access to
+browse and restore their own snapshots without sudo.
+
+```sh
+sudo meta/system/snapper-home
+snapper -c home get-config          # confirm TIMELINE_CREATE = yes
+snapper -c home list                # snapshots begin appearing on the hour
+```
+
 **Enabled systemd units.** Recorded in `meta/systemd-user-units.txt` and
 `meta/systemd-system-units.txt`; see the fresh-machine steps above. The system
 list is deliberately not a full inventory — around thirty units are enabled on

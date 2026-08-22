@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# smartd-notify — smartd's `-M exec` handler. Turns a SMART warning into two
+# things: a persistent journald record and a critical desktop notification.
+#
+# Why this exists: smartd's built-in alerting is email (`-m address`), and this
+# machine has no MTA configured, so mail would silently go nowhere. Instead
+# smartd.conf points `-M exec` here and `-m <nomailer>` disables the mail path.
+# smartd runs this script as root every time a monitored drive reports trouble
+# (and once at startup because of `-M test`, so the path can be verified).
+#
+# smartd hands us the details in the environment: SMARTD_MESSAGE is the
+# human-readable warning, SMARTD_DEVICE the drive it is about. See smartd(8),
+# section "ENVIRONMENT".
+#
+# Reaching the desktop from root is the same problem lock-before-sleep solves:
+# find the logged-in user's session bus and send the notification as them.
+# notify-send only needs DBUS_SESSION_BUS_ADDRESS to reach the running shell's
+# notification daemon (noctalia), so runuser + the bus socket is all it takes.
+# Everything is best-effort — a session we cannot notify must not fail the
+# journald record, which is the alert that always lands.
+
+set -u
+
+msg="${SMARTD_MESSAGE:-SMART event (no message)}"
+dev="${SMARTD_DEVICE:-unknown device}"
+
+# The record that never gets missed. daemon.crit lands in the journal and, with
+# the default rules, on the console — `journalctl -t smartd` finds it later.
+logger -t smartd -p daemon.crit "SMART warning on ${dev}: ${msg}"
+
+# The popup you cannot miss. Push it into every active user's session bus; on
+# this single-user machine that is just uid 1000, but the loop keeps it correct
+# if that ever changes.
+for bus in /run/user/*/bus; do
+    [ -S "$bus" ] || continue
+    uid=$(basename "$(dirname "$bus")")
+    user=$(id -nu "$uid" 2>/dev/null) || continue
+    runuser -u "$user" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=${bus}" \
+        notify-send -u critical -a smartd \
+        "S.M.A.R.T. warning — ${dev}" "${msg}" 2>/dev/null || true
+done
+
+exit 0

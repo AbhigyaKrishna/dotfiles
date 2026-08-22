@@ -38,8 +38,16 @@ btrfs-scrub@-.timer
 
 # Hourly snapshots of the root subvolume. snap-pac already snapshots around
 # pacman transactions; this adds the timeline between them, and
-# limine-snapper-sync makes both bootable from the menu.
+# limine-snapper-sync makes both bootable from the menu. The same timer also
+# drives the /home timeline once the 'home' config exists (meta/system/
+# snapper-home creates it); no separate timer is needed.
 snapper-timeline.timer
+
+# SMART disk monitoring. Watches every drive DEVICESCAN finds, runs periodic
+# self-tests, and alerts through meta/system/smartd-notify (journald + a
+# critical desktop notification) since there is no MTA for email. The config
+# and its handler have to be installed first — see meta/system/smartd.conf.
+smartd.service
 
 # Keeps the LVFS metadata current so `fwupdmgr get-updates` stays meaningful.
 # Refreshes metadata only — it never installs firmware. Note LVFS carries

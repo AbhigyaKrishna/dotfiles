@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# snapper-home — create and configure the snapper config for /home.
+#
+# The gap this closes: snapper on this machine is configured for the root
+# subvolume ONLY (/etc/snapper/configs/root). @home is a separate subvolume, so
+# every file that matters — code, notes, research, dotfiles-in-progress — has
+# had zero snapshot protection. snap-pac snapshots root around pacman
+# transactions, but nothing has ever snapshotted /home. This adds that.
+#
+# Unlike root, /home has no package-manager trigger, so timeline snapshots ARE
+# the mechanism here (root deliberately leaves TIMELINE_CREATE off because
+# snap-pac already covers its meaningful moments). The retention mirrors root's
+# — 5 hourly, 7 daily — because the existing snapper-timeline.timer and
+# snapper-cleanup.timer already iterate every config, so no new units are
+# needed: creating this config is enough for them to start managing /home.
+#
+# limine-snapper-sync is scoped to /@/.snapshots (ROOT_SNAPSHOTS_PATH in
+# /etc/limine-snapper-sync.conf), so these /home/.snapshots snapshots never
+# reach the boot menu — they are for file recovery, not for booting into.
+#
+# ALLOW_USERS + SYNC_ACL let the owning user browse and restore their own
+# snapshots under /home/.snapshots without sudo, which is the whole point of
+# snapshotting a home directory for day-to-day work.
+#
+# Run as root. Idempotent: safe to re-run — it creates the config only if it is
+# missing, then re-asserts the settings either way.
+#
+#   sudo meta/system/snapper-home
+#
+# Recover a file afterwards: `snapper -c home list`, then diff or copy out of
+# /home/.snapshots/<N>/snapshot/…  (a rollback of /home is deliberately not
+# automated here — home rollbacks are per-file, not whole-subvolume).
+
+set -euo pipefail
+
+USER_TO_ALLOW=${SUDO_USER:-abhigya}
+
+if [ "$(id -u)" -ne 0 ]; then
+    echo "snapper-home: must run as root (try: sudo meta/system/snapper-home)" >&2
+    exit 1
+fi
+
+if [ ! -f /etc/snapper/configs/home ]; then
+    echo "snapper-home: creating 'home' config for /home ..."
+    snapper -c home create-config /home
+else
+    echo "snapper-home: 'home' config already exists — re-asserting settings."
+fi
+
+snapper -c home set-config \
+    TIMELINE_CREATE=yes \
+    TIMELINE_CLEANUP=yes \
+    TIMELINE_MIN_AGE=1800 \
+    TIMELINE_LIMIT_HOURLY=5 \
+    TIMELINE_LIMIT_DAILY=7 \
+    TIMELINE_LIMIT_WEEKLY=0 \
+    TIMELINE_LIMIT_MONTHLY=0 \
+    TIMELINE_LIMIT_YEARLY=0 \
+    NUMBER_CLEANUP=yes \
+    NUMBER_LIMIT=50 \
+    NUMBER_LIMIT_IMPORTANT=15 \
+    ALLOW_USERS="$USER_TO_ALLOW" \
+    SYNC_ACL=yes
+
+echo "snapper-home: done. Verify with:  snapper -c home get-config"
