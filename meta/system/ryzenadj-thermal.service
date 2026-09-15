@@ -1,0 +1,50 @@
+# Apply the 5600H thermal and power caps at boot, and again after every resume.
+#
+# Why it must re-run. ryzenadj writes to the SMU — the CPU's own power management
+# microcontroller — and those writes are volatile. The SMU is reinitialised from
+# firmware defaults on resume from S3, so a cap applied at boot is silently gone
+# the first time the lid closes and reopens. A boot-only unit would appear to
+# work, then stop working, which is the worst failure shape available. Hence the
+# two Install targets below.
+#
+# Ordering. After=suspend.target hibernate.target hybrid-sleep.target means that
+# on the resume path this runs once the SMU is back up rather than racing it.
+# On the boot path those targets are inactive and the ordering is simply inert,
+# so one unit covers both cases without a second copy.
+#
+# Type=oneshot with RemainAfterExit=yes so `systemctl status ryzenadj-thermal`
+# reads as active after it has done its work, rather than as dead — the caps it
+# set are still in force even though no process is left running.
+#
+# Not installable by stow: it belongs to root under /etc, and it runs a helper
+# that belongs to root under /usr/local/bin.
+#
+#   paru -S ryzenadj
+#   sudo install -Dm755 meta/system/ryzenadj-thermal \
+#     /usr/local/bin/ryzenadj-thermal
+#   sudo install -Dm644 meta/system/ryzenadj-thermal.service \
+#     /etc/systemd/system/ryzenadj-thermal.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now ryzenadj-thermal.service
+#
+# Check it took: `sudo ryzenadj -i` should report THM LIMIT CORE at the TCTL set
+# in the script, and STAPM LIMIT at the STAPM value. Then confirm the resume path
+# once — suspend, resume, and run `sudo ryzenadj -i` again; the limits should
+# still be there. If they have reverted to 95°C, the ordering needs revisiting.
+#
+# To undo entirely: `sudo systemctl disable --now ryzenadj-thermal.service` and
+# reboot. The caps are volatile, so a power cycle clears them with no residue.
+
+[Unit]
+Description=Apply Ryzen thermal and power caps (SMU limits are volatile)
+Documentation=https://github.com/FlyGoat/RyzenAdj
+After=suspend.target hibernate.target hybrid-sleep.target
+ConditionPathExists=/usr/bin/ryzenadj
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/ryzenadj-thermal
+
+[Install]
+WantedBy=multi-user.target suspend.target hibernate.target hybrid-sleep.target

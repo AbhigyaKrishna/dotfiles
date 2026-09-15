@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# ryzenadj-thermal — hold the 5600H below its thermal cliff.
+#
+# The problem. This is an HP Pavilion Gaming 15-ec2xxx: Ryzen 5 5600H plus an
+# RTX 3050 Mobile sharing one modest heatpipe assembly. The firmware's own
+# junction-temperature target is Tjmax, 95°C, and it will happily drive the part
+# there and sit on it. Measured at the desktop — no game, just a long-lived node
+# process, dockerd and a browser — Tctl read 94.6°C, then 96.25°C, with all
+# twelve threads at 4.09 GHz. The NVIDIA side agreed: nvidia-smi's
+# SW Thermal Slowdown counter had accumulated 2.86 hours over a 49-hour uptime,
+# and the GPU idled at 72°C while drawing 9 W of its 60 W budget.
+#
+# The tell that this is airflow rather than heat transport: idle sits at 74.8°C
+# and a pinned all-core load only reaches 85.4°C. A cooler with a bad die
+# interface shows a steep rise under load. This one is already saturated before
+# the load arrives and barely moves — the whole curve is shifted up, which is
+# what a fan that never leaves its lowest speed produces.
+#
+# Running at Tjmax is not a safe steady state to design around. The part is not
+# in danger — it protects itself — but "protects itself" means it throttles, and
+# throttling is exactly the symptom being chased. Worse, it throttles reactively:
+# it overshoots, cuts hard, recovers, overshoots again. The clock trace sawtooths
+# and frametimes go with it.
+#
+# What this does. It lowers the junction-temperature target and the sustained
+# power budget, so the part stabilises just under the cliff instead of bouncing
+# off it. The trade is real and worth stating plainly: peak single-core boost
+# drops a little. Sustained all-core clocks usually RISE, because the part stops
+# spending its time in recovery. On a chassis that cannot carry stock limits,
+# capping is faster than not capping.
+#
+# This is a mitigation, not a fix. It is worth being precise about what the
+# actual fault is, because the obvious guess was wrong. Thermal paste is NOT the
+# problem — this machine was repasted a month before these measurements. The
+# fault is airflow: the fans turn, but the stock curve never ramps them, so they
+# idle quietly while the part cooks. hp-wmi cannot see or change this (its fan
+# inputs read a flat 0 and its boost mode moved a pinned all-core load by 0.8°C).
+# nbfc-linux drives the EC directly and is the real fix — see meta/packages.txt.
+#
+# ORDER MATTERS. Do not enable this unit until nbfc_service is working. With the
+# fans unfixed this machine idles at Tctl 74.8°C, so a cap of 85°C leaves barely
+# ten degrees and would throttle the part at rest — trading a heat problem for a
+# permanent performance problem. Fix the airflow, re-measure idle and load, then
+# set TCTL from what the machine actually does.
+#
+# TUNING. The values below are a conservative starting point, NOT this machine's
+# measured stock limits — they were chosen before ryzenadj was installed. Run
+# `sudo ryzenadj -i` to read what the firmware actually offers, then adjust.
+# TCTL is the setting that matters most; the wattages are secondary. If games
+# feel sluggish rather than merely cooler, raise STAPM first, then TCTL.
+#
+# Not installable by stow: it belongs to root under /usr/local/bin. See the
+# service file for the install and enable sequence.
+
+set -euo pipefail
+
+# Junction temperature ceiling, °C. Stock is 95 (Tjmax).
+#
+# This was 85 while the fans were still stuck at their lowest speed, when the
+# machine idled at 74.8°C and the cap was the only thing standing between it and
+# Tjmax. With nbfc-linux driving the fans properly that reasoning no longer
+# holds: idle fell to the mid 60s, so an 85°C ceiling is no longer a safety net,
+# it is just a clamp that would bite mid-game for no reason. 90 keeps five
+# degrees clear of Tjmax — enough to stop the reactive sawtooth — while leaving
+# the part room to actually boost now that the heat can get out.
+TCTL=90
+
+# Sustained power budget, mW. STAPM is the long-run average the firmware targets.
+STAPM=35000
+
+# Short-burst ceiling, mW — what a single-threaded spike may draw for a moment.
+FAST=45000
+
+# Medium-window ceiling, mW, between FAST and STAPM.
+SLOW=38000
+
+ryzenadj=/usr/bin/ryzenadj
+[ -x "$ryzenadj" ] || { echo "ryzenadj not present at $ryzenadj" >&2; exit 1; }
+
+# --tctl-temp is the one that does the real work here; the power limits keep the
+# part from sprinting into the ceiling in the first place. Applying them in one
+# invocation matters — ryzenadj writes them as a set.
+"$ryzenadj" \
+    --tctl-temp="$TCTL" \
+    --stapm-limit="$STAPM" \
+    --fast-limit="$FAST" \
+    --slow-limit="$SLOW"
+
+echo "applied: tctl=${TCTL}C stapm=${STAPM}mW fast=${FAST}mW slow=${SLOW}mW"

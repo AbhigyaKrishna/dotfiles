@@ -62,3 +62,30 @@ fwupd-refresh.timer
 # its helper in meta/system/ — both have to be installed first (they are not
 # stowed and the helper lives in /usr/local/bin), then this enabled.
 lock-before-sleep.service
+
+# Drives the CPU and GPU fans from the EC directly, because the stock curve on
+# this chassis never ramps and hp-wmi's control of it is inert (see the fan
+# control note in meta/packages.txt for the measurements). Install the matching
+# config first, then enable:
+#   sudo nbfc config -s "HP Pavilion Gaming Laptop 15-ec2xxx"
+# Check it with `nbfc status -a`. Note it reports fan speed as a PERCENTAGE of
+# the configured range, not RPM — nothing on this machine reports true RPM, since
+# hp-wmi's fan inputs are the broken ones. The percentage is still the useful
+# signal: watching it step 100 -> 60 as the machine cools is how you confirm the
+# curve is actually being driven rather than sitting at a fixed value.
+nbfc_service.service
+
+# Caps the 5600H's junction temperature and sustained power budget as a second
+# line of defence behind the fans, so the part stabilises below Tjmax instead of
+# bouncing off it. Needs ryzenadj from the AUR, plus the unit and its helper
+# installed from meta/system/. The caps are volatile SMU writes, so the unit is
+# also WantedBy the sleep targets and re-applies on every resume; enabling it
+# here covers only the boot path.
+#
+# ORDER MATTERS: enable this only AFTER nbfc_service is working, and set the cap
+# from measurements taken with the fans behaving. It is currently 90°C, which
+# suits an idle in the low 60s. The earlier value of 85°C was chosen while the
+# fans were still stuck and the machine idled at 74.8°C — on a machine in that
+# state a cap that close to idle throttles the part at rest, trading a heat
+# problem for a permanent performance one.
+ryzenadj-thermal.service

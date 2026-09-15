@@ -130,6 +130,32 @@ tlp-pd                      # provides= power-profiles-daemon and conflicts
 tlpui                       # GTK editor for the drop-in, the way xdgctl edits
                             #   mimeapps.list — changes show up as a diff
 
+# TLP tunes the OS-visible knobs; it cannot touch the SMU. This chassis needs
+# that second layer: the firmware targets Tjmax (95°C) and will sit on it, which
+# means throttling reactively — overshoot, cut hard, recover, overshoot again,
+# with frametimes following the sawtooth. ryzenadj lowers the junction
+# temperature target and the power budget directly so the part settles below the
+# cliff instead. This is the backstop, not the fix — nbfc-linux below is what
+# actually made this machine cool. Backs meta/system/ryzenadj-thermal.service —
+# AUR, so paru rather than pacman, and not covered by install-packages.sh.
+ryzenadj                    # AUR. Writes are volatile and lost on resume,
+                            #   which is why the unit re-applies on wake
+
+# Fan control, because the stock curve on this chassis does not ramp. Measured:
+# Tctl 74.8°C at idle and 85–96°C under load, with the fans audibly turning but
+# never spinning up. hp-wmi is no help — its fan1_input/fan2_input read a flat 0
+# in every state, and forcing pwm1_enable=0 (its "boost" mode) moved a pinned
+# all-core load by 0.8°C, which is noise. The driver's EC offsets are wrong for
+# this model, so both the readings and the control are inert.
+#
+# nbfc-linux talks to the EC directly instead, and ships a config matched to this
+# exact machine — "HP Pavilion Gaming Laptop 15-ec2xxx", which is verbatim what
+# /sys/class/dmi/id/product_name reports. It drives the CPU and GPU fans
+# separately (EC registers 45 and 44) and its curve asks for 80% at 75°C and
+# 100% above, where the stock behaviour asks for almost nothing.
+nbfc-linux                  # AUR. Unit is nbfc_service.service, config lands
+                            #   at /etc/nbfc/nbfc.json via `nbfc config -s`
+
 # --- maintenance ------------------------------------------------------------
 # Back the timers in meta/systemd-system-units.txt. pacman-contrib provides
 # paccache.timer, btrfs-progs the scrub timer, snapper and snap-pac the
