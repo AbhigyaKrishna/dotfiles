@@ -9,7 +9,12 @@
     // so there is nothing left to D-Bus-activate. See the keyring note under
     // "Root-owned pieces" for the pam and client-config halves of this.
     spawn-sh-at-startup "/usr/lib/polkit-kde-authentication-agent-1 &" // Polkit
-    spawn-sh-at-startup "qs -c noctalia-shell"
+    // noctalia-shell moved to a systemd user unit (noctalia-shell.service) so it
+    // restarts itself when it dies. quickshell segfaulted twice in ~35 minutes
+    // under memory pressure, and each crash left the bar and wallpaper gone until
+    // it was started again by hand. quickshell refuses a second instance of the
+    // same config, so this line must stay commented or it races with the unit.
+    // spawn-sh-at-startup "qs -c noctalia-shell"
     spawn-sh-at-startup "/usr/bin/nirinit --save-interval 300 &"
     spawn-sh-at-startup "xsettingsd &" // XSETTINGS for X11/XWayland apps
 

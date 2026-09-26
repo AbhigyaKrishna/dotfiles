@@ -53,12 +53,13 @@
     }
 
     // ─── Named-workspace auto-assignment ───
-    // Steer the always-open apps onto the named workspaces declared in
-    // cfg/workspaces.kdl. Multiple match blocks in one rule are OR'd, so the
-    // code rule catches GoLand and either spelling of VSCode Insiders.
+    // Steer the always-open apps onto the four named workspaces declared in
+    // cfg/workspaces.kdl: web←zen, terminals←kitty, code←GoLand/VSCode Insiders,
+    // extras←Beeper. Multiple match blocks in one rule are OR'd, so the code
+    // rule catches GoLand and either spelling of VSCode Insiders.
     //
-    // app-ids: `zen` and `jetbrains-goland` are confirmed from `niri msg
-    // windows`. Beeper and Insiders were not open when this was written, so
+    // app-ids: `zen`, `kitty`, and `jetbrains-goland` are confirmed from `niri
+    // msg windows`. Beeper and Insiders were not open when this was written, so
     // those two use case-tolerant regexes; if either app ever opens on the
     // wrong workspace, read its real app-id from `niri msg windows` and tighten
     // the match. Failure is harmless — the window just opens on the current
@@ -69,6 +70,11 @@
     }
 
     window-rule {
+	match app-id="kitty"
+	open-on-workspace "terminals"
+    }
+
+    window-rule {
 	match app-id="jetbrains-goland"
 	match app-id=r#"(?i)^code(\s*-\s*)?insiders$"#
 	open-on-workspace "code"
@@ -76,5 +82,5 @@
 
     window-rule {
 	match app-id=r#"(?i)^beeper$"#
-	open-on-workspace "chat"
+	open-on-workspace "extras"
     }

@@ -19,7 +19,8 @@
         "overviewLayer": false,
         "pinnedApps": [
             "zen",
-            "code-insiders"
+            "code-insiders",
+            "dev.zed.Zed"
         ],
         "position": "center",
         "screenshotAnnotationTool": "",
@@ -291,12 +292,6 @@
                 },
                 {
                     "defaultSettings": {
-                        "mode": "region"
-                    },
-                    "id": "plugin:screenshot"
-                },
-                {
-                    "defaultSettings": {
                         "audioCodec": "opus",
                         "audioSource": "default_output",
                         "colorRange": "limited",
@@ -440,7 +435,7 @@
         }
     },
     "desktopWidgets": {
-        "enabled": false,
+        "enabled": true,
         "gridSnap": false,
         "gridSnapScale": false,
         "monitorWidgets": [
