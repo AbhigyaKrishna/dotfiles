@@ -13,10 +13,10 @@
 #   gamemoderun   performance governor and scheduling for the session, which
 #                 matters here because TLP is deliberately conservative
 #   mangohud      overlay — its GPU name field is how you confirm the game
-#                 really is on the NVIDIA card
+#                 really is on the NVIDIA card. Off unless asked for:
+#                   GAMERUN_HUD=1 gamerun %command%
 #
-# Any of them can be dropped for one launch:
-#   GAMERUN_HUD=0 gamerun %command%
+# The other two can be dropped for one launch:
 #   GAMERUN_PRIME=0 gamerun %command%
 #   GAMERUN_GAMEMODE=0 gamerun %command%
 #
@@ -46,7 +46,7 @@ fi
 if want "${GAMERUN_GAMEMODE:-1}" && command -v gamemoderun >/dev/null 2>&1; then
     wrap+=(gamemoderun)
 fi
-if "${GAMERUN_HUD:-1}" == 1 && command -v mangohud >/dev/null 2>&1; then
+if [ "${GAMERUN_HUD:-0}" = 1 ] && command -v mangohud >/dev/null 2>&1; then
     wrap+=(mangohud)
 fi
 
