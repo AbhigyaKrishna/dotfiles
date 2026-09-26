@@ -48,10 +48,38 @@ if [[ $MODE == list ]]; then
   exit 0
 fi
 
+# GLib follows a symlinked mimeapps.list before rewriting it, but resolves a
+# relative target against the process cwd rather than the link's directory, so
+# stow's ../Projects/... link makes every "set as default" fail. Files listed
+# here get an absolute link after stowing; since stow will not touch a link it
+# did not make, they are removed again before any stow run.
+ABSOLUTE_LINKS=(.config/mimeapps.list)
+
+drop_absolute_links() {
+  local f
+  ((DRY)) && return 0
+  for f in "${ABSOLUTE_LINKS[@]}"; do
+    [[ -L $TARGET/$f && $(readlink "$TARGET/$f") == "$REPO"/* ]] && rm "$TARGET/$f"
+  done
+  return 0
+}
+
+make_links_absolute() {
+  local f dest
+  ((DRY)) && return 0
+  for f in "${ABSOLUTE_LINKS[@]}"; do
+    [[ -L $TARGET/$f && $(readlink "$TARGET/$f") != /* ]] || continue
+    dest="$(readlink -f "$TARGET/$f")"
+    [[ $dest == "$REPO"/* ]] && ln -sfn "$dest" "$TARGET/$f"
+  done
+  return 0
+}
+
 # ---------------------------------------------------------------------------
 # unstow everything
 # ---------------------------------------------------------------------------
 if [[ $MODE == unstow ]]; then
+  drop_absolute_links
   for tier in "${TIERS[@]}"; do
     [[ -d $REPO/$tier ]] || continue
     for pkg in "$REPO/$tier"/*/; do
@@ -101,6 +129,8 @@ unfold_private_dirs() {
   done < <(find "$pkgdir" -type d -name '.gnupg' -print0 2>/dev/null)
 }
 
+drop_absolute_links
+
 info "applying profile '$PROFILE'"
 
 for tier in "${TIERS[@]}"; do
@@ -127,6 +157,8 @@ for tier in "${TIERS[@]}"; do
     stow "${STOW_FLAGS[@]}" -d "$REPO/$tier" -t "$TARGET" "${want[@]}"
   fi
 done
+
+make_links_absolute
 
 info "done"
 
