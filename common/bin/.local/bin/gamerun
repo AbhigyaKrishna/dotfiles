@@ -46,7 +46,7 @@ fi
 if want "${GAMERUN_GAMEMODE:-1}" && command -v gamemoderun >/dev/null 2>&1; then
     wrap+=(gamemoderun)
 fi
-if want "${GAMERUN_HUD:-1}" && command -v mangohud >/dev/null 2>&1; then
+if "${GAMERUN_HUD:-1}" == 1 && command -v mangohud >/dev/null 2>&1; then
     wrap+=(mangohud)
 fi
 

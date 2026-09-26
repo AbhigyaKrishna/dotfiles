@@ -26,3 +26,5 @@ end
 # Set per-session so it follows the runtime dir, rather than as a universal
 # variable with a hardcoded uid baked in.
 set --export DOCKER_HOST "unix://$XDG_RUNTIME_DIR/docker.sock"
+
+thefuck --alias | source
