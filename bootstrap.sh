@@ -120,13 +120,15 @@ unfold_dropin_dirs() {
 # not exist yet, stow would link the whole directory into the repo — leaving gpg
 # with a 755 world-readable home it refuses to trust, and pointing the path that
 # private keys get written to at a public git repo. Create it 700 for real first
-# so stow only links the .conf files inside.
+# so stow only links the .conf files inside. ~/.pi/agent is the same case: pi
+# keeps auth.json, sessions and its managed install there; pi-lens writes state
+# next to its config in ~/.pi-lens.
 unfold_private_dirs() {
   local pkgdir="$1" d
   ((DRY)) && return 0
   while IFS= read -r -d '' d; do
     install -d -m 700 "$TARGET/${d#"$pkgdir/"}"
-  done < <(find "$pkgdir" -type d -name '.gnupg' -print0 2>/dev/null)
+  done < <(find "$pkgdir" -type d \( -name '.gnupg' -o -path "$pkgdir/.pi" -o -path "$pkgdir/.pi/agent" -o -path "$pkgdir/.pi-lens" \) -print0 2>/dev/null)
 }
 
 drop_absolute_links

@@ -1,0 +1,14 @@
+{
+  "tests": { "enabled": false },
+  "ui": { "compactToolLine": true, "compactLspStatus": true },
+  "tools": {
+    "ast_grep_replace": { "enabled": false },
+    "project_report": { "enabled": false },
+    "project_scan": { "enabled": false },
+    "effective_config": { "enabled": false },
+    "analyze": { "enabled": false },
+    "health": { "enabled": false },
+    "latency": { "enabled": false },
+    "rebuild": { "enabled": false }
+  }
+}

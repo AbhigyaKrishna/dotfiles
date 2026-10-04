@@ -1,0 +1,52 @@
+{
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-opus-5-5",
+  "defaultThinkingLevel": "medium",
+  "enabledModels": [
+    "anthropic/claude-opus-5-5",
+    "anthropic/claude-fable-5-1",
+    "anthropic/claude-sonnet-5-5",
+    "openai-codex/gpt-6.1-sol"
+  ],
+  "steeringMode": "all",
+  "followUpMode": "all",
+  "quietStartup": "header",
+  "showCacheMissNotices": true,
+  "terminal": {
+    "showTerminalProgress": true
+  },
+  "enableInstallTelemetry": false,
+  "packages": [
+    "npm:pi-subagents",
+    "npm:pi-web-access",
+    "npm:pi-lens",
+    "npm:@juicesharp/rpiv-todo",
+    "npm:pi-cmem"
+  ],
+  "subagents": {
+    "defaultModel": "anthropic/claude-sonnet-5-5",
+    "defaultThinking": "medium",
+    "agentOverrides": {
+      "scout": {
+        "model": "openai-codex/gpt-6-luna",
+        "thinking": "low"
+      },
+      "researcher": {
+        "model": "openai-codex/gpt-6-luna",
+        "thinking": "low"
+      },
+      "worker": {
+        "model": "anthropic/claude-sonnet-5-5",
+        "thinking": "medium"
+      },
+      "reviewer": {
+        "model": "openai-codex/gpt-6.1-sol",
+        "thinking": "medium"
+      },
+      "oracle": {
+        "model": "openai-codex/gpt-6.1-sol",
+        "thinking": "high"
+      }
+    }
+  }
+}

@@ -112,6 +112,27 @@ consult. Not worth chasing unless something actually opens in the wrong place.
 `.profile` also exports `BROWSER=zen-browser`, for the terminal programs that
 read that variable instead of going through XDG.
 
+## Pi coding agent
+
+`common/pi` holds the [pi](https://pi.dev) agent config: `settings.json`
+(models, packages, subagent model routing), `mcp.json`, the global `AGENTS.md`,
+local extensions, `pi-cmem.json` (bridges pi to the claude-mem worker on port
+`37700 + uid % 100`, shared with Claude Code and Codex; the
+`claude-mem-worker.ts` extension starts the worker for a pi session and, once
+the last pi quits and no Claude Code session is open, stops it after its queue
+drains), and
+`~/.pi-lens/config.json`. Pi itself, its npm packages,
+`auth.json` and sessions stay in `~/.pi/agent`, which `bootstrap.sh` creates for
+real (700) so stow links only the tracked files into it.
+
+```sh
+curl -fsSL https://pi.dev/install.sh | sh   # managed install, updates with `pi update`
+pi update --extensions                      # install the packages listed in settings.json
+rtk init -g --agent pi                       # writes extensions/rtk.ts (tracked; re-run after rtk upgrades)
+printf %s "$KEY" | install -Dm600 /dev/stdin ~/.config/context7/api-key  # read by mcp.json, never committed
+pi                                           # then /login for Anthropic and ChatGPT
+```
+
 ## Docker, rootless
 
 The daemon runs as the user rather than as root, so containers have no path to
@@ -715,6 +736,8 @@ desktop packages.
 | `.config/mpv/` | empty |
 | `.config/noisetorch/`, `.config/openrazer/`, `.config/polychromatic/` | written by their own daemons and tied to this machine's devices |
 | `.config/fish/fish_variables` | see below — seeded from `meta/fish_variables.seed` |
+| `.pi/agent/auth.json`, `sessions/`, `npm/`, `install/` | credentials, transcripts and installed code |
+| `.config/context7/api-key` | API key referenced by `common/pi` `mcp.json` |
 
 ### fish_variables
 

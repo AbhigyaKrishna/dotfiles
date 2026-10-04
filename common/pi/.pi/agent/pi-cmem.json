@@ -1,0 +1,8 @@
+{
+  "workerPort": 37700,
+  "capture": true,
+  "skipTools": ["read", "ls", "grep", "find"],
+  "inject": true,
+  "injectWhen": "session-start",
+  "maxInjectChars": 4000
+}
