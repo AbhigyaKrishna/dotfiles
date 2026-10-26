@@ -81,3 +81,5 @@
 **/gtk-4.0/gtk.css
 # nodeterm canvas layout and agent session ids for this checkout
 .nodeterm/
+
+__pycache__

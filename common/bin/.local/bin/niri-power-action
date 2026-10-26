@@ -15,19 +15,13 @@
 # (builds, downloads, music, SSH sessions) keeps running. The machine only
 # actually suspends when staying awake would drain a battery, never on mains.
 #
-# The idle chain walks the same line. Locking at ten minutes and blanking at
-# twenty happen on either power source, so those stay noctalia's own stages
-# (idle.lockTimeout, idle.screenOffTimeout) and keep its fade overlay. Blanking
-# early at eleven and sleeping at twenty happen only on battery, and noctalia's
-# built-in stages cannot be told not to fire — screenOffCommand and
-# suspendCommand run alongside turnOffMonitors() and suspend() rather than
-# replacing them (see IdleService.qml _executeAction). Those two therefore come
-# through idle.customCommands into the modes below, which is the only place the
-# power source gets a vote.
+# Noctalia's idle behaviors lock after ten minutes and blank at twenty on
+# either power source. Custom behaviors call this script to blank at eleven
+# and suspend at twenty only on battery. The resume command restores displays.
 #
 # Wired up from:
-#   ~/.config/niri/cfg/lid.kdl        — switch-events { lid-close / lid-open }
-#   ~/.config/noctalia/settings.json  — idle.customCommands
+#   ~/.config/niri/cfg/lid.kdl       — switch-events { lid-close / lid-open }
+#   ~/.config/noctalia/config.toml  — idle.behavior.*
 
 set -u
 
@@ -41,7 +35,7 @@ LID_GRACE=600
 PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/niri-power-action.lid"
 
 lock() {
-    qs -c noctalia-shell ipc call lockScreen lock 2>/dev/null || true
+    noctalia msg session lock 2>/dev/null || true
 }
 
 # Returns 0 when a mains supply is plugged in and online, 1 on battery.

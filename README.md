@@ -80,6 +80,19 @@ Adding to the list is just a new line in `meta/packages.txt`; the script needs
 no change. The list deliberately covers only what the tracked configs need — it
 is not a full record of installed packages, which `pacman -Qqe` already gives.
 
+## Noctalia v5
+
+The desktop uses the native `noctalia` package. Its declarative configuration
+is `desktop/niri/.config/noctalia/config.toml`; GUI changes go to
+`~/.local/state/noctalia/settings.toml` and override the tracked TOML. Startup
+is supervised by `noctalia.service`, tracked under `desktop/niri`. After
+stowing the profile, enable it with `systemctl --user enable --now noctalia`.
+Niri bindings and the lid helper use `noctalia msg`.
+
+The v4 JSON settings and plugin files remain available for recovery. They are
+not read by v5. See [the migration notes](docs/noctalia-v5.md) for preserved
+behavior, plugin changes, validation and rollback.
+
 ## Default applications
 
 Defaults live in `common/misc/.config/mimeapps.list`, tracked like any other
@@ -277,10 +290,9 @@ placeholder` for two of its three profiles; TLP tunes disk APM, PCIe ASPM, wifi
 power save and USB besides, and switches on AC/battery by itself.
 
 The bar keeps working across the swap. `tlp-pd` declares
-`provides=power-profiles-daemon`, satisfying noctalia's optdepend, and ships
+`provides=power-profiles-daemon` and ships
 both the `org.freedesktop.UPower.PowerProfiles` and `net.hadess.PowerProfiles`
-D-Bus interfaces — the former is what noctalia's `PowerProfileService.qml`
-reaches through `Quickshell.Services.UPower`.
+D-Bus interfaces, used by Noctalia's native power-profile integration.
 
 ```sh
 paru -S tlp-pd                                    # replaces power-profiles-daemon
@@ -349,6 +361,18 @@ sudo install -Dm644 meta/system/sleep.conf.d/10-hibernate.conf \
 sudo systemctl restart systemd-oomd
 ```
 
+**Swap: zswap instead of zram.** Order matters — the swapfile first, so there
+is capacity to replace zram's before zram goes away at the next boot. Reasoning
+is in the memory section below and in each file's header.
+
+```sh
+sudo meta/system/swapfile-setup     # @swap subvolume, 8G swapfile, fstab priorities
+sudo install -Dm644 meta/system/zram-generator.conf /etc/systemd/zram-generator.conf
+sudo install -Dm644 meta/system/tmpfiles.d/zswap.conf /etc/tmpfiles.d/zswap.conf
+sudo install -Dm644 meta/system/sysctl.d/99-vm-tuning.conf /etc/sysctl.d/99-vm-tuning.conf
+systemctl reboot
+```
+
 **Disk health monitoring (smartd).** The default `/etc/smartd.conf` is a bare
 `DEVICESCAN` — it watches the drives but has no alert path and runs no
 self-tests, so a failing disk stays silent. This machine has a reason to care:
@@ -387,6 +411,14 @@ sudo meta/system/snapper-home
 snapper -c home get-config          # confirm TIMELINE_CREATE = yes
 snapper -c home list                # snapshots begin appearing on the hour
 ```
+
+**SSD storage.** `meta/system/ssd-storage` moves `/tmp`, `/var/tmp`, system
+caches, development caches and discovered application caches to the ext4 SATA
+SSD at the next boot. Daily versioned SSD backups replace long NVMe snapshot
+retention; local snapshots are reduced only after a backup succeeds. Install
+with `sudo meta/system/ssd-storage install`, then reboot when ready. The SSD
+becomes required for boot. See [SSD storage](meta/system/SSD-STORAGE.md) for
+the exact scope, verification and recovery steps.
 
 **Enabled systemd units.** Recorded in `meta/systemd-user-units.txt` and
 `meta/systemd-system-units.txt`; see the fresh-machine steps above. The system
@@ -429,8 +461,9 @@ on mains hibernating on its own. The script falls back to a plain suspend if
 hibernation is unavailable, so this degrades rather than breaks. Hibernation
 needs no extra setup here — `resume=UUID=...` is already on the kernel cmdline
 against a 20G swap partition, and logind reports `CanSuspendThenHibernate=yes`
-— but it is worth trying `systemctl hibernate` by hand once, since zram runs
-near full on this machine and its pages go into the image too.
+— but it is worth trying `systemctl hibernate` by hand once, since the zswap
+pool lives in RAM and its pages go into the image too. The partition carries
+`pri=10` over the swapfile's `pri=5` so it stays the hibernation target.
 
 The idle chain locks first and blanks second, which is the opposite of the usual
 order and deliberate: on mains the lock screen then stays lit for a further ten
@@ -439,18 +472,11 @@ never leaves you guessing whether a dark laptop is asleep or off. On battery
 that indulgence is not worth the charge, so the panel goes dark a minute after
 locking and the machine sleeps at twenty.
 
-Which stage lives where follows from that. A stage that behaves the same on
-both power sources is noctalia's own; a stage that has to ask is not. Locking at
-ten and blanking at twenty are unconditional — the twenty-minute blank is simply
-a no-op on battery, where the panel has been dark since eleven — so both are
-built-in stages, and both keep the fade overlay that a stray mouse nudge
-cancels. Blanking at eleven and sleeping at twenty do have to ask, and neither
-built-in stage can be talked out of firing: `idle.screenOffCommand` and
-`idle.suspendCommand` run *alongside* `turnOffMonitors()` and `suspend()` rather
-than replacing them (see `IdleService.qml`, `_executeAction`). Those two
-therefore run from `idle.customCommands`, where the script decides. The cost is
-that custom stages get no fade and no automatic `turnOnMonitors()` on wake,
-which is what the paired `resumeCommand` is for.
+Noctalia's `[idle.behavior.*]` tables own the unconditional lock and display
+blanking. Battery-only display blanking and suspend call `niri-power-action`
+with `action = "command"`; the display behavior pairs with a `resume_command`
+to restore the monitors. `pre_action_fade_seconds = 5` lets activity cancel a
+pending idle action.
 
 The power button opens the session menu — lock, suspend, log out, reboot, shut
 down — so the button asks rather than acts. It needs no logind drop-in to do
@@ -467,27 +493,19 @@ can intercept.
 Four pieces cooperate:
 
 **`meta/system/logind.conf.d/10-lid.conf`** takes logind out of the picture.
-The obvious `HandleLidSwitch=lock` does not work: noctalia has no logind
-integration at all — nothing in the shell listens for
-`org.freedesktop.login1`'s `Lock` signal — so logind would blank the display
-and leave the session unlocked behind it. Every `HandleLidSwitch*` is therefore
-`ignore`.
+Niri handles the lid so the script can distinguish power sources and docked
+operation. Every `HandleLidSwitch*` is `ignore`, keeping logind from racing
+those handlers. Native Noctalia also listens for logind lock and sleep events.
 
 **`desktop/niri/.config/niri/cfg/lid.kdl`** handles the lid instead, through
 niri's `switch-events`. `lid-close` and `lid-open` both call the script below;
 reopening the lid cancels a pending suspend.
 
-**`desktop/niri/.config/noctalia/settings.json`** holds the idle timeouts under
-`idle`: `lockTimeout` 600 and `screenOffTimeout` 1200 for the unconditional
-stages, `suspendTimeout` 0 because there is no unconditional suspend, and two
-`customCommands` entries at 660 and 1200 seconds calling the script's
-`idle-screen-off` and `idle-suspend` modes. The 660 entry pairs with a
-`resumeCommand` running `idle-screen-on`.
-
-`fadeDuration` is 5, so each built-in stage is announced by a five-second fade
-to black that any input cancels. Raising the timeouts is the usual first tweak;
-they are seconds, and noctalia reloads the file as soon as it is written, so
-no restart is needed.
+**`desktop/niri/.config/noctalia/config.toml`** defines four idle behaviors:
+lock at 600 seconds, battery-only screen off at 660, unconditional screen off
+at 1200, and battery-only suspend at 1200. Each behavior has a native `action`
+or a command calling the power helper. The five-second pre-action fade is
+cancelled by input; changes reload automatically.
 
 **`common/bin/.local/bin/niri-power-action`** decides what a lid close or an
 idle timeout should actually do, since that depends on power state. Every
@@ -502,7 +520,7 @@ so a missed `lid-open` event cannot suspend a machine that is open and in use.
 
 Locking is safe across outputs by construction: `WlSessionLock` puts a surface
 on every output and the protocol will not accept input until each one has one,
-so a second screen cannot be left showing the desktop. `lockScreenMonitors` is
+so a second screen cannot be left showing the desktop. `lockscreen.monitors` is
 empty, which gives every screen the full lock UI; naming monitors there gives
 the unlisted ones a black screen instead. Screen-off and screen-on go through
 niri and cover every output too.
@@ -515,47 +533,28 @@ logind's `LidClosed` property, which `HandleLidSwitch=ignore` does not affect:
 sysfs (`/sys/class/drm/*/status`, skipping `eDP`/`LVDS`/`DSI`) rather than
 `niri msg`, so it needs no JSON parser and holds up if the compositor is busy.
 
-Walking away while docked is still covered — the idle stages lock at eleven
+Walking away while docked is still covered — the idle stages lock at ten
 minutes whatever the lid is doing. The one gap worth knowing: undocking while
 the lid is already shut leaves the session unlocked, because the lid-close that
 would have locked it was suppressed as clamshell. The idle stages catch it
-eleven minutes later.
+ten minutes later.
 
-The idle stages come from noctalia's own idle service, configured under `idle`
-in `desktop/niri/.config/noctalia/settings.json`. Note `suspendTimeout` is `0`,
-which disables the built-in suspend stage on purpose: noctalia's suspend stage
-always calls `lockAndSuspend()` and its `suspendCommand` runs *in addition to*
-that rather than instead of it, so it cannot be made conditional. The 30-minute
-suspend is expressed as an `idle.customCommands` entry instead, which runs a
-bare command with no built-in action attached.
+No unconditional suspend behavior is configured. The battery-suspend command
+calls the helper, which checks mains power before it locks and sleeps.
 
 Because the session now stays up with the lid shut, power saving that was
 harmless when the machine suspended is not any more — hence `WIFI_PWR_ON_BAT`
 and `USB_AUTOSUSPEND` being switched off in the TLP drop-in above. Wifi and
 Bluetooth stay fully connected while locked.
 
-The lock screen itself is noctalia's, tuned for as little friction as possible:
-`autoStartAuth` so the password field is live the moment it appears and there is
-nothing to click first, `lockScreenAnimations` for a fade rather than a hard
-cut, `lockScreenBlur` and `lockScreenTint` for a blurred and dimmed wallpaper,
-and `enableLockScreenMediaControls` so what is playing stays controllable.
-`allowPasswordWithFprintd` is left off — no fingerprint reader on this machine.
+The native lock screen locks before suspend, uses password authentication
+without fingerprint prompts, and retains the wallpaper blur and tint.
 `Mod+Alt+L` locks on demand.
 
-## Wayland rough edges
-
-A handful of things that are not niri's fault but land on the user anyway, and
-what is done about each.
-
-**The clipboard used to empty when the source window closed.** Wayland ties
-clipboard ownership to the surface that set it, so quitting the app you copied
-from takes the clipboard with it. The `wl-paste --watch cliphist store` pair in
-noctalia's `appLauncher` settings keeps the *history* regardless, but recovering
-from it means opening the picker — a plain `Ctrl+V` in the next window pastes
-nothing at all, which is the part that feels broken. `wl-clip-persist`, spawned
-from `cfg/autostart.kdl`, holds ownership open instead. It runs with
-`--clipboard regular`: doing the same to the primary selection makes every
-accidental text drag fight with middle-click paste.
+**Clipboard history and persistence are native to Noctalia v5.** `Mod+V`
+opens the clipboard panel. The shell keeps the selection pasteable after its
+source app closes, so no `wl-paste`/cliphist watchers or `wl-clip-persist`
+autostart are required. The previous cliphist store remains on disk.
 
 **XWayland clients read the cursor from the environment**, not from GTK
 settings, so `XCURSOR_THEME` and `XCURSOR_SIZE` are set in `cfg/misc.kdl`
@@ -579,20 +578,19 @@ selecting. There is nothing to fix here; it is written down so it is not
 "fixed" later.
 
 **Screenshots go to disk as well as the clipboard.** `screenshot-path` was
-`null`, meaning clipboard-only — and since the `wl-paste` watcher feeds every
-clipboard change into cliphist, a screenshot survived only until the next copy.
+`null`, meaning clipboard-only, so a screenshot was not saved as an ordinary
+file until this path was configured.
 `Print`, `Shift+Print` and `Alt+Print` now do the three capture modes, next to
 the original `CTRL+Shift+1/2/3`.
 
 **Nothing keeps the machine awake for a long build.** niri honours idle
-inhibitors and noctalia's idle stages respect them — Quickshell's `IdleMonitor`
-defaults `respectInhibitors` to true and noctalia does not override it — so a
+inhibitors and Noctalia's native idle notifier respects them, so a
 video that takes an inhibitor already holds off the ten-minute lock. A compile
 does not. `Mod+Shift+I` toggles noctalia's inhibitor by hand for those.
 
 ## Memory pressure
 
-14G of RAM with zram on top is not much for this workload, and the machine runs
+14G of RAM is not much for this workload, and the machine runs
 close to the edge: `/proc/pressure/memory` sits around `full avg300=7%`, meaning
 roughly seven percent of any five minutes *every* task is stalled waiting on
 memory. Without a userspace OOM killer the next spike is a hard freeze — the
@@ -608,12 +606,27 @@ per-app scoping is why oomd suits this setup better than `earlyoom`, which
 picks a single process by score: oomd takes out one whole app cleanly.
 
 The trigger is memory pressure, never swap usage. Swap-based killing is the
-other common recipe and would be actively wrong here, because zram is meant to
-sit near 100% — a swap threshold would fire constantly during normal use.
+other common recipe and would be actively wrong here, because the workload
+keeps 20G+ swapped out during normal use. The limit is 70% for 20s; it was 50%,
+which killed apps during spikes the machine would have survived. Note that
+nodeterm runs every agent, LSP and terminal in one scope, so when oomd does pick
+it, the whole canvas goes at once.
+
+Swap is zswap in front of disk, not zram. The two together inverted the LRU:
+zram (7.5G) filled early with cold pages and kept them, so every later eviction
+went to the NVMe partition and the slow tier held the recently-used pages.
+zswap is a write-back cache — hot pages stay compressed in RAM (up to 25% of
+it), the shrinker writes cold ones to disk. zswap is not capacity of its own,
+so `meta/system/swapfile-setup` adds an 8G swapfile behind the 20G partition to
+replace zram's share. Turning zram off also stops cachyos-settings' udev rule
+from forcing `vm.swappiness=150`, so `sysctl.d/99-vm-tuning.conf`'s 100 finally
+applies.
 
 ```sh
-systemctl --user show app.slice -p DropInPaths -p ManagedOOMMemoryPressure
+systemctl --user show app.slice -p DropInPaths -p ManagedOOMMemoryPressureLimit
 journalctl -u systemd-oomd            # what it killed, and why
+swapon --show; sysctl vm.swappiness   # partition pri 10, swapfile pri 5, 100
+grep . /sys/module/zswap/parameters/* # enabled=Y
 ```
 
 ## Gaming
@@ -726,7 +739,7 @@ desktop packages.
 | Path | Why |
 | --- | --- |
 | `.config/gh/hosts.yml` | live OAuth token |
-| `.config/noctalia/plugins/` | 3 MB of third-party code; `plugins.json` records which |
+| `.config/noctalia/plugins/` | preserved v4 plugin code and settings; v5 plugins are selected in `config.toml` and cached under `~/.local/state/noctalia/plugins/` |
 | `.config/micro/syntax/` | 146 syntax files shipped by micro, not authored here |
 | `.config/polychromatic/devices/`, `states/`, `backends/` | device-capability cache, runtime lighting state, per-device persistence |
 | `.config/htop/htop_history` | search history, not settings; `htoprc` is tracked |

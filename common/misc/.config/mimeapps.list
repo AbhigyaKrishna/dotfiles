@@ -117,6 +117,8 @@ x-scheme-handler/discord-418076578333851669=discord-418076578333851669.desktop
 x-scheme-handler/lunarclient=lunarclient.desktop
 x-scheme-handler/discord-671636579701358592=lunarclient.desktop
 x-scheme-handler/codex=chatgpt.desktop
+x-scheme-handler/antigravity=antigravity.desktop
+x-scheme-handler/hydralauncher=hydralauncher.desktop
 
 [Added Associations]
 text/html=zen.desktop;
@@ -219,3 +221,4 @@ application/vnd.efi.img=gnome-disk-image-mounter.desktop;
 application/x-msdownload=wine.desktop;
 application/x-msi=wine.desktop;
 application/x-remmina=org.remmina.Remmina-file.desktop;
+x-scheme-handler/antigravity=antigravity.desktop;

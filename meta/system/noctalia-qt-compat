@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""Install a user-local Qt 6.12 compatibility override for Noctalia 4.x."""
+
+import os
+import re
+import shutil
+import tempfile
+from pathlib import Path
+
+SOURCE = Path("/etc/xdg/quickshell/noctalia-shell")
+
+
+def compatible_imports(contents):
+    return re.subn(
+        r"(?m)^import (QtQuick(?:\.Window)?)[ \t]*$", r"import \1 6.11", contents
+    )
+
+
+def patch_plugins(configuration):
+    plugins = configuration / "noctalia/plugins"
+    cache = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
+    backups = cache / "noctalia-qt-compat/plugins-original"
+    patched = 0
+    for plugin in sorted(plugins.rglob("*.qml")):
+        contents, count = compatible_imports(plugin.read_text())
+        if not count:
+            continue
+        backup = backups / plugin.relative_to(plugins)
+        backup.parent.mkdir(parents=True, exist_ok=True)
+        if not backup.exists():
+            shutil.copy2(plugin, backup)
+        plugin.write_text(contents)
+        patched += 1
+    print(f"Pinned {patched} plugin QML files; originals saved in {backups}")
+
+
+def install():
+    configuration = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+    destination = configuration / "quickshell/noctalia-shell"
+    if destination.exists() or destination.is_symlink():
+        raise RuntimeError(f"Refusing to replace existing configuration: {destination}")
+    if not (SOURCE / "shell.qml").is_file():
+        raise RuntimeError(f"Noctalia QML package is missing: {SOURCE}")
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    patched = 0
+    with tempfile.TemporaryDirectory(
+        prefix=".noctalia-compat-", dir=destination.parent
+    ) as staging:
+        override = Path(staging) / "noctalia-shell"
+        override.mkdir()
+        for source in sorted(SOURCE.rglob("*")):
+            target = override / source.relative_to(SOURCE)
+            if source.is_dir():
+                target.mkdir(exist_ok=True)
+                continue
+            if source.suffix == ".qml":
+                original = source.read_text()
+                # Qt 6.12 introduces QtQuick.Color, shadowing qs.Commons.Color.
+                contents, count = compatible_imports(original)
+                if count:
+                    target.write_text(contents)
+                    target.chmod(0o644)
+                    patched += 1
+                    continue
+            target.symlink_to(source)
+        if not patched:
+            raise RuntimeError(
+                "No unversioned QtQuick imports found; review package compatibility"
+            )
+        override.rename(destination)
+    print(f"Installed {destination}: pinned {patched} QML files to QtQuick 6.11")
+    patch_plugins(configuration)
+
+
+if __name__ == "__main__":
+    install()

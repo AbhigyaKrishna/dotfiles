@@ -12,9 +12,10 @@
 # On the boot path those targets are inactive and the ordering is simply inert,
 # so one unit covers both cases without a second copy.
 #
-# Type=oneshot with RemainAfterExit=yes so `systemctl status ryzenadj-thermal`
-# reads as active after it has done its work, rather than as dead — the caps it
-# set are still in force even though no process is left running.
+# Type=oneshot WITHOUT RemainAfterExit. It is tempting to add it so `systemctl
+# status` reads active, but that silently breaks the resume path: an active unit is already "started", so suspend.target pulling it in again is
+# a no-op and the caps are never reapplied. `inactive (dead)` with status=0 is
+# the correct healthy state here — the caps stay in the SMU with no process left.
 #
 # Not installable by stow: it belongs to root under /etc, and it runs a helper
 # that belongs to root under /usr/local/bin.
@@ -43,7 +44,6 @@ ConditionPathExists=/usr/bin/ryzenadj
 
 [Service]
 Type=oneshot
-RemainAfterExit=yes
 ExecStart=/usr/local/bin/ryzenadj-thermal
 
 [Install]

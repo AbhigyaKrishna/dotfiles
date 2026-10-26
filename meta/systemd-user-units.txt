@@ -23,3 +23,6 @@ docker.socket
 
 # Resets the internal mic analog boost (see common/systemd) on login.
 mic-gain.service
+
+# Native desktop shell (unit tracked under desktop/niri).
+noctalia.service

@@ -9,19 +9,9 @@
     // so there is nothing left to D-Bus-activate. See the keyring note under
     // "Root-owned pieces" for the pam and client-config halves of this.
     spawn-sh-at-startup "/usr/lib/polkit-kde-authentication-agent-1 &" // Polkit
-    // noctalia-shell moved to a systemd user unit (noctalia-shell.service) so it
-    // restarts itself when it dies. quickshell segfaulted twice in ~35 minutes
-    // under memory pressure, and each crash left the bar and wallpaper gone until
-    // it was started again by hand. quickshell refuses a second instance of the
-    // same config, so this line must stay commented or it races with the unit.
-    // spawn-sh-at-startup "qs -c noctalia-shell"
+    // Supervise native Noctalia so a shell crash recovers without logging out.
+    // systemd starts it with graphical-session.target; do not spawn it twice.
     spawn-sh-at-startup "/usr/bin/nirinit --save-interval 300 &"
     spawn-sh-at-startup "xsettingsd &" // XSETTINGS for X11/XWayland apps
 
-    // Wayland hands the clipboard to the *window* that owns it, so closing the
-    // app you copied from empties it. cliphist still has the text, but only
-    // through the picker — a plain Ctrl+V right after closing pastes nothing.
-    // wl-clip-persist keeps ownership alive instead. Regular clipboard only:
-    // doing the same to the primary selection makes every stray text drag
-    // fight with whatever middle-click paste is expected to do.
-    spawn-sh-at-startup "wl-clip-persist --clipboard regular &"
+    // Noctalia v5 keeps the selection pasteable after its source app exits.

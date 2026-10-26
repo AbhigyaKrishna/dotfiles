@@ -1,0 +1,226 @@
+# Native Noctalia v5. Legacy JSON and QML plugins are retained for rollback.
+[shell]
+font_family = "Adwaita Sans"
+time_format = "{:%H:%M}"
+telemetry_enabled = false
+polkit_agent = false
+clipboard_enabled = true
+clipboard_keep_from_closed_apps = true
+
+[shell.panel]
+transparency_mode = "glass"
+borders = false
+launcher_placement = "floating"
+launcher_position = "center"
+session_placement = "floating"
+session_position = "center"
+
+[shell.launcher]
+app_grid = true
+categories = true
+sort_by_usage = true
+pinned = ["zen", "code-insiders", "dev.zed.Zed"]
+
+[shell.launcher.providers.windows]
+global = true
+
+[shell.launcher.providers.session]
+global = true
+
+[shell.session]
+grid = true
+grid_columns = 3
+
+[[shell.session.actions]]
+action = "lock"
+shortcut = "1"
+
+[[shell.session.actions]]
+action = "lock_and_suspend"
+shortcut = "2"
+countdown_seconds = 10
+
+[[shell.session.actions]]
+action = "command"
+label = "Hibernate"
+command = "systemctl hibernate"
+shortcut = "3"
+countdown_seconds = 10
+
+[[shell.session.actions]]
+action = "reboot"
+shortcut = "4"
+countdown_seconds = 10
+
+[[shell.session.actions]]
+action = "logout"
+shortcut = "5"
+countdown_seconds = 10
+
+[[shell.session.actions]]
+action = "shutdown"
+shortcut = "6"
+countdown_seconds = 10
+
+[[shell.session.actions]]
+action = "command"
+label = "Reboot to UEFI"
+command = "systemctl reboot --firmware-setup"
+shortcut = "7"
+countdown_seconds = 10
+
+[bar.main]
+position = "top"
+thickness = 34
+background_opacity = 0.93
+margin_ends = 4
+margin_edge = 4
+widget_spacing = 6
+capsule = true
+reserve_space = true
+start = ["launcher", "clock", "cpu", "cpu-temp", "ram", "active_window", "media"]
+center = ["workspaces"]
+end = ["tray", "notifications", "battery", "volume", "brightness", "bluetooth", "warp", "network", "todo", "notes", "privacy", "recorder", "docker", "control-center"]
+
+[bar.main.dead_zone.actions]
+right = "panel-toggle control-center"
+
+[widget.launcher]
+glyph = "rocket"
+
+[widget.clock]
+format = "{:%H:%M %a, %b %d}"
+tooltip_format = "{:%H:%M %a, %b %d}"
+
+[widget.cpu]
+type = "sysmon"
+stat = "cpu_usage"
+
+[widget.cpu-temp]
+type = "sysmon"
+stat = "cpu_temp"
+
+[widget.ram]
+type = "sysmon"
+stat = "ram_used"
+
+[widget.active_window]
+max_length = 145
+title_scroll = "on_hover"
+
+[widget.workspaces]
+label_source = "id"
+max_label_chars = 2
+pill_scale = 0.7
+labels_only_when_occupied = true
+
+[widget.media]
+artist_first = true
+max_length = 145
+title_scroll = "on_hover"
+
+[widget.tray]
+drawer = true
+hide_passive = false
+pinned = ["toolbox"]
+
+[widget.volume]
+show_label = false
+
+[widget.warp]
+type = "levi/warp:warp"
+
+[widget.todo]
+type = "baizhu/paged-todo:bar"
+
+[widget.notes]
+type = "noctalia/notes:notes"
+
+[widget.recorder]
+type = "noctalia/screen_recorder:recorder"
+
+[widget.docker]
+type = "8bury/mini-docker:mini-docker"
+
+[plugins]
+enabled = ["levi/warp", "baizhu/paged-todo", "noctalia/notes", "noctalia/screen_recorder", "8bury/mini-docker"]
+auto_update = "all"
+
+[dock]
+enabled = true
+position = "bottom"
+auto_hide = true
+reserve_space = false
+active_monitor_only = true
+launcher_position = "none"
+pinned = []
+
+[theme]
+mode = "dark"
+source = "wallpaper"
+wallpaper_scheme = "m3-content"
+
+[theme.templates]
+enable_builtin_templates = true
+builtin_ids = ["gtk3", "gtk4"]
+
+[wallpaper]
+enabled = true
+directory = "/home/abhigya/Pictures/Wallpapers"
+fill_mode = "crop"
+
+[wallpaper.default]
+path = "/home/abhigya/Pictures/Wallpapers/wallhaven_g7g8yq.jpg"
+
+[lockscreen]
+enabled = true
+lock_before_suspend = true
+fingerprint = false
+blur_intensity = 0.55
+tint_intensity = 0.25
+
+[idle]
+pre_action_fade_seconds = 5
+behavior_order = ["lock", "battery-screen-off", "screen-off", "battery-suspend"]
+
+[idle.behavior.lock]
+enabled = true
+timeout = 600
+action = "lock"
+
+[idle.behavior.battery-screen-off]
+timeout = 660
+action = "command"
+command = "$HOME/.local/bin/niri-power-action idle-screen-off"
+resume_command = "$HOME/.local/bin/niri-power-action idle-screen-on"
+
+[idle.behavior.screen-off]
+enabled = true
+timeout = 1200
+action = "screen_off"
+
+[idle.behavior.battery-suspend]
+timeout = 1200
+action = "command"
+command = "$HOME/.local/bin/niri-power-action idle-suspend"
+
+[notification]
+position = "top_right"
+layer = "overlay"
+background_opacity = 1.0
+
+[osd]
+position = "top_right"
+hide_delay_ms = 2000
+background_opacity = 1.0
+
+[audio]
+enable_sounds = false
+
+[location]
+auto_locate = true
+address = "Patna"
+
+[weather]
+enabled = true
+unit = "celsius"

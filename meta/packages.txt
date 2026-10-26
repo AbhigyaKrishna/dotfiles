@@ -13,30 +13,15 @@ git
 # --- desktop: backs desktop/niri ------------------------------------------
 niri
 xwayland-satellite
-noctalia-shell
-quickshell
+noctalia
 monique                     # AUR
 polkit-kde-agent            # niri/cfg/autostart.kdl spawns
                             #   /usr/lib/polkit-kde-authentication-agent-1
                             # noctalia's PowerProfile widget needs a
                             # power-profiles-daemon; tlp-pd supplies it, in the
                             # power section below.
-wl-clip-persist             # niri/cfg/autostart.kdl spawns it. Wayland ties
-                            # clipboard ownership to the window that set it, so
-                            # closing the source app empties the clipboard.
-                            # cliphist keeps the history either way, but only
-                            # reachable through the picker — this is what makes
-                            # a plain Ctrl+V still work afterwards.
-                            # Note xwayland-satellite above is NOT started from
-                            # autostart.kdl and its systemd user unit is
-                            # deliberately left disabled: niri 26.04 spawns it
-                            # itself. Enabling the unit gives two of them.
-cliphist                    # the clipboard-history store behind Mod+V. noctalia
-                            # runs the wl-paste watchers that feed it, but the
-                            # store itself is cliphist; it is NOT a
-                            # noctalia-shell dependency (checked: pacman -Qi),
-                            # so without it named here the picker opens empty on
-                            # a fresh machine and Mod+V does nothing.
+                            # xwayland-satellite is started by niri 26.04;
+                            # leave its separate systemd user unit disabled.
 xdg-desktop-portal-gnome    # ScreenCast portal backend for niri — this is what
                             # makes "share screen" work in the browser and
                             # Vesktop. niri has no portal of its own; without a
@@ -124,7 +109,7 @@ tlp
 tlp-pd                      # provides= power-profiles-daemon and conflicts
                             #   with it. Ships the UPower.PowerProfiles and
                             #   net.hadess.PowerProfiles D-Bus interfaces, so
-                            #   noctalia's widget (Quickshell.Services.UPower)
+                            #   Noctalia's native power-profile widget
                             #   keeps working. CLI is tlpctl, NOT
                             #   powerprofilesctl — that binary is gone.
 tlpui                       # GTK editor for the drop-in, the way xdgctl edits
@@ -258,6 +243,7 @@ lazygit
 # do nothing.
 grim                        # region screenshot backend (grim -g "$(slurp)")
 slurp                       # the drag-to-select region picker
+gpu-screen-recorder         # Noctalia v5 screen-recorder plugin
 satty                       # screenshot annotator behind niri-annotate
 tesseract                   # OCR engine behind niri-ocr
 tesseract-data-eng          # English model — tesseract does nothing without a
@@ -266,7 +252,7 @@ hyprpicker                  # screen colour picker behind niri-color-pick. Speak
                             #   wlr-screencopy, so it works under niri.
 wl-clipboard                # wl-copy — the annotate/OCR/colour scripts put their
                             #   result on the clipboard with it. Also what
-                            #   cliphist and wl-clip-persist build on.
+                            #   clipboard command-line tools build on.
 libnotify                   # notify-send — the OCR and colour-pick scripts toast
                             #   their result through it (noctalia serves the
                             #   org.freedesktop.Notifications side)

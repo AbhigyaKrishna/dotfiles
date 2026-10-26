@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# swapfile-setup — add an 8G btrfs swapfile behind the 20G swap partition.
+#
+# Why it exists: dropping zram for zswap (meta/system/zram-generator.conf) costs
+# swap capacity. zswap is only a cache — every page in it still reserves a slot
+# on a real swap device — while zram's 7.5G was capacity of its own. The
+# workload here has been seen holding ~22G in swap, more than the 20G
+# partition, so without this the switch would trade thrashing for OOM kills.
+# 20G + 8G restores the ~28G total zram + partition used to give.
+#
+# Layout:
+#   - A top-level @swap subvolume mounted at /swap, beside @, @home, @log ...
+#     Top-level rather than nested in @ so snapper root snapshots and
+#     limine-snapper-sync rollbacks never include, or strand, the swapfile.
+#   - `btrfs filesystem mkswapfile` creates it NOCOW and fully allocated, which
+#     btrfs requires of an active swapfile.
+#   - Priorities: partition pri=10, swapfile pri=5. The partition fills first,
+#     and it stays the highest-priority device, which is the one systemd picks
+#     for a hibernation image — matching resume=UUID=86e0... on the cmdline. With
+#     unset priorities either device could be chosen and resume could miss it.
+#
+# Run as root. Idempotent: each step checks whether it has already been done.
+#
+#   sudo meta/system/swapfile-setup
+
+set -euo pipefail
+
+SIZE=8g
+ROOT_UUID=09e84c23-5d8c-45a1-ab45-b174ee3741a4
+SWAP_PART_UUID=86e04d3e-bea6-4156-aaed-e7243bf1bac6
+FILE=/swap/swapfile
+
+if [ "$(id -u)" -ne 0 ]; then
+    echo "swapfile-setup: must run as root (try: sudo meta/system/swapfile-setup)" >&2
+    exit 1
+fi
+
+# 1. The @swap subvolume, created from the top level of the filesystem.
+if ! btrfs subvolume list / | grep -qE ' path @swap$'; then
+    echo "swapfile-setup: creating subvolume @swap ..."
+    top=$(mktemp -d)
+    mount -o subvolid=5 UUID=$ROOT_UUID "$top"
+    btrfs subvolume create "$top/@swap"
+    umount "$top"
+    rmdir "$top"
+fi
+
+# 2. Mount it at /swap, persistently. No compress= — btrfs refuses to swap on a
+#    compressed file, and mkswapfile sets NOCOW (which implies no compression).
+if ! grep -qE '^\S+\s+/swap\s' /etc/fstab; then
+    echo "swapfile-setup: adding /swap to fstab ..."
+    printf '%-41s %-14s %-7s %s\n' "UUID=$ROOT_UUID" /swap btrfs \
+        'subvol=/@swap,defaults,noatime 0 0' >>/etc/fstab
+    systemctl daemon-reload
+fi
+mkdir -p /swap
+mountpoint -q /swap || mount /swap
+
+# 3. The swapfile itself.
+if [ ! -f "$FILE" ]; then
+    echo "swapfile-setup: creating $SIZE swapfile ..."
+    btrfs filesystem mkswapfile --size "$SIZE" --uuid clear "$FILE"
+fi
+
+# 4. Priorities: partition first (and for hibernation), swapfile second.
+if ! grep -qE "^UUID=$SWAP_PART_UUID\s.*pri=10" /etc/fstab; then
+    echo "swapfile-setup: giving the swap partition pri=10 ..."
+    sed -i -E "s|^(UUID=$SWAP_PART_UUID\s+swap\s+swap\s+)defaults(\s)|\1defaults,pri=10\2|" /etc/fstab
+fi
+if ! grep -qE "^$FILE\s" /etc/fstab; then
+    echo "swapfile-setup: adding the swapfile to fstab ..."
+    printf '%-41s %-14s %-7s %s\n' "$FILE" none swap 'defaults,pri=5 0 0' >>/etc/fstab
+fi
+
+systemctl daemon-reload
+swapon --show=NAME,PRIO 2>/dev/null | grep -q "^$FILE" || swapon -p 5 "$FILE"
+
+echo "swapfile-setup: done. The partition's pri=10 applies from the next boot."
+swapon --show

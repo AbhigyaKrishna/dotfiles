@@ -1,0 +1,255 @@
+--- a/src/wayland/hyprland/ipc/connection.cpp
++++ b/src/wayland/hyprland/ipc/connection.cpp
+@@ -850,4 +850,16 @@
+ 	return a->bindableId().value() > b->bindableId().value();
+ }
+ 
++QBindable<HyprlandMonitor*> HyprlandIpc::bindableFocusedMonitor() const {
++	return &this->bFocusedMonitor;
++}
++
++QBindable<HyprlandWorkspace*> HyprlandIpc::bindableFocusedWorkspace() const {
++	return &this->bFocusedWorkspace;
++}
++
++QBindable<HyprlandToplevel*> HyprlandIpc::bindableActiveToplevel() const {
++	return &this->bActiveToplevel;
++}
++
+ } // namespace qs::hyprland::ipc
+--- a/src/wayland/hyprland/ipc/connection.hpp
++++ b/src/wayland/hyprland/ipc/connection.hpp
+@@ -81,17 +81,11 @@
+ 
+ 	[[nodiscard]] HyprlandMonitor* monitorFor(QuickshellScreenInfo* screen);
+ 
+-	[[nodiscard]] QBindable<HyprlandMonitor*> bindableFocusedMonitor() const {
+-		return &this->bFocusedMonitor;
+-	}
++	[[nodiscard]] QBindable<HyprlandMonitor*> bindableFocusedMonitor() const;
+ 
+-	[[nodiscard]] QBindable<HyprlandWorkspace*> bindableFocusedWorkspace() const {
+-		return &this->bFocusedWorkspace;
+-	}
++	[[nodiscard]] QBindable<HyprlandWorkspace*> bindableFocusedWorkspace() const;
+ 
+-	[[nodiscard]] QBindable<HyprlandToplevel*> bindableActiveToplevel() const {
+-		return &this->bActiveToplevel;
+-	}
++	[[nodiscard]] QBindable<HyprlandToplevel*> bindableActiveToplevel() const;
+ 
+ 	void setFocusedMonitor(HyprlandMonitor* monitor);
+ 
+--- a/src/wayland/hyprland/ipc/hyprland_toplevel.cpp
++++ b/src/wayland/hyprland/ipc/hyprland_toplevel.cpp
+@@ -158,4 +158,8 @@
+ 		return nullptr;
+ 	}
+ }
++QBindable<HyprlandWorkspace*> HyprlandToplevel::bindableWorkspace() { return &this->bWorkspace; }
++
++QBindable<HyprlandMonitor*> HyprlandToplevel::bindableMonitor() { return &this->bMonitor; }
++
+ } // namespace qs::hyprland::ipc
+--- a/src/wayland/hyprland/ipc/hyprland_toplevel.hpp
++++ b/src/wayland/hyprland/ipc/hyprland_toplevel.hpp
+@@ -10,6 +10,9 @@
+ #include "../../toplevel_management/handle.hpp"
+ #include "../../toplevel_management/qml.hpp"
+ #include "connection.hpp"
++
++Q_MOC_INCLUDE("monitor.hpp");
++Q_MOC_INCLUDE("workspace.hpp");
+ 
+ namespace qs::hyprland::ipc {
+ 
+@@ -81,10 +84,10 @@
+ 		return &this->bLastIpcObject;
+ 	};
+ 
+-	[[nodiscard]] QBindable<HyprlandWorkspace*> bindableWorkspace() { return &this->bWorkspace; }
++	[[nodiscard]] QBindable<HyprlandWorkspace*> bindableWorkspace();
+ 	void setWorkspace(HyprlandWorkspace* workspace);
+ 
+-	[[nodiscard]] QBindable<HyprlandMonitor*> bindableMonitor() { return &this->bMonitor; }
++	[[nodiscard]] QBindable<HyprlandMonitor*> bindableMonitor();
+ 
+ signals:
+ 	void addressChanged();
+--- a/src/wayland/hyprland/ipc/monitor.cpp
++++ b/src/wayland/hyprland/ipc/monitor.cpp
+@@ -87,4 +87,8 @@
+ 
+ void HyprlandMonitor::onActiveWorkspaceDestroyed() { this->bActiveWorkspace = nullptr; }
+ 
++QBindable<HyprlandWorkspace*> HyprlandMonitor::bindableActiveWorkspace() const {
++	return &this->bActiveWorkspace;
++}
++
+ } // namespace qs::hyprland::ipc
+--- a/src/wayland/hyprland/ipc/monitor.hpp
++++ b/src/wayland/hyprland/ipc/monitor.hpp
+@@ -9,6 +9,8 @@
+ #include <qtypes.h>
+ 
+ #include "connection.hpp"
++
++Q_MOC_INCLUDE("workspace.hpp");
+ 
+ namespace qs::hyprland::ipc {
+ 
+@@ -54,9 +56,7 @@
+ 	[[nodiscard]] QBindable<qint32> bindableHeight() { return &this->bHeight; }
+ 	[[nodiscard]] QBindable<qreal> bindableScale() { return &this->bScale; }
+ 
+-	[[nodiscard]] QBindable<HyprlandWorkspace*> bindableActiveWorkspace() const {
+-		return &this->bActiveWorkspace;
+-	}
++	[[nodiscard]] QBindable<HyprlandWorkspace*> bindableActiveWorkspace() const;
+ 
+ 	[[nodiscard]] QBindable<bool> bindableFocused() const { return &this->bFocused; }
+ 
+--- a/src/wayland/hyprland/ipc/workspace.cpp
++++ b/src/wayland/hyprland/ipc/workspace.cpp
+@@ -154,4 +154,6 @@
+ 	this->ipc->dispatch(QString("workspace %1").arg(this->bName.value()));
+ }
+ 
++QBindable<HyprlandMonitor*> HyprlandWorkspace::bindableMonitor() { return &this->bMonitor; }
++
+ } // namespace qs::hyprland::ipc
+--- a/src/wayland/hyprland/ipc/workspace.hpp
++++ b/src/wayland/hyprland/ipc/workspace.hpp
+@@ -10,6 +10,8 @@
+ 
+ #include "connection.hpp"
+ #include "hyprland_toplevel.hpp"
++
++Q_MOC_INCLUDE("monitor.hpp");
+ 
+ namespace qs::hyprland::ipc {
+ 
+@@ -64,7 +66,7 @@
+ 	[[nodiscard]] QBindable<bool> bindableFocused() { return &this->bFocused; }
+ 	[[nodiscard]] QBindable<bool> bindableUrgent() { return &this->bUrgent; }
+ 	[[nodiscard]] QBindable<bool> bindableHasFullscreen() { return &this->bHasFullscreen; }
+-	[[nodiscard]] QBindable<HyprlandMonitor*> bindableMonitor() { return &this->bMonitor; }
++	[[nodiscard]] QBindable<HyprlandMonitor*> bindableMonitor();
+ 	[[nodiscard]] ObjectModel<HyprlandToplevel>* toplevels() { return &this->mToplevels; }
+ 
+ 	[[nodiscard]] QVariantMap lastIpcObject() const;
+--- a/src/x11/i3/ipc/controller.cpp
++++ b/src/x11/i3/ipc/controller.cpp
+@@ -366,4 +366,12 @@
+ 	return a->bindableNumber().value() > b->bindableNumber().value();
+ }
+ 
++QBindable<I3Monitor*> I3IpcController::bindableFocusedMonitor() const {
++	return &this->bFocusedMonitor;
++}
++
++QBindable<I3Workspace*> I3IpcController::bindableFocusedWorkspace() const {
++	return &this->bFocusedWorkspace;
++}
++
+ } // namespace qs::i3::ipc
+--- a/src/x11/i3/ipc/controller.hpp
++++ b/src/x11/i3/ipc/controller.hpp
+@@ -43,13 +43,9 @@
+ 
+ 	I3Monitor* monitorFor(QuickshellScreenInfo* screen);
+ 
+-	[[nodiscard]] QBindable<I3Monitor*> bindableFocusedMonitor() const {
+-		return &this->bFocusedMonitor;
+-	};
++	[[nodiscard]] QBindable<I3Monitor*> bindableFocusedMonitor() const;
+ 
+-	[[nodiscard]] QBindable<I3Workspace*> bindableFocusedWorkspace() const {
+-		return &this->bFocusedWorkspace;
+-	};
++	[[nodiscard]] QBindable<I3Workspace*> bindableFocusedWorkspace() const;
+ 
+ 	[[nodiscard]] ObjectModel<I3Monitor>* monitors();
+ 	[[nodiscard]] ObjectModel<I3Workspace>* workspaces();
+--- a/src/x11/i3/ipc/monitor.cpp
++++ b/src/x11/i3/ipc/monitor.cpp
+@@ -80,4 +80,6 @@
+ 
+ void I3Monitor::onActiveWorkspaceDestroyed() { this->bActiveWorkspace = nullptr; }
+ 
++QBindable<I3Workspace*> I3Monitor::bindableActiveWorkspace() { return &this->bActiveWorkspace; }
++
+ } // namespace qs::i3::ipc
+--- a/src/x11/i3/ipc/monitor.hpp
++++ b/src/x11/i3/ipc/monitor.hpp
+@@ -5,6 +5,8 @@
+ 
+ #include "connection.hpp"
+ #include "controller.hpp"
++
++Q_MOC_INCLUDE("workspace.hpp");
+ 
+ namespace qs::i3::ipc {
+ 
+@@ -55,9 +57,7 @@
+ 	[[nodiscard]] QBindable<qreal> bindableScale() { return &this->bScale; }
+ 	[[nodiscard]] QBindable<bool> bindableFocused() { return &this->bFocused; }
+ 
+-	[[nodiscard]] QBindable<I3Workspace*> bindableActiveWorkspace() {
+-		return &this->bActiveWorkspace;
+-	}
++	[[nodiscard]] QBindable<I3Workspace*> bindableActiveWorkspace();
+ 
+ 	[[nodiscard]] QVariantMap lastIpcObject() const;
+ 
+--- a/src/x11/i3/ipc/workspace.cpp
++++ b/src/x11/i3/ipc/workspace.cpp
+@@ -76,4 +76,6 @@
+ 	this->ipc->dispatch(QString("workspace number %1").arg(this->bNumber.value()));
+ }
+ 
++QBindable<I3Monitor*> I3Workspace::bindableMonitor() { return &this->bMonitor; }
++
+ } // namespace qs::i3::ipc
+--- a/src/x11/i3/ipc/workspace.hpp
++++ b/src/x11/i3/ipc/workspace.hpp
+@@ -6,6 +6,8 @@
+ 
+ #include "connection.hpp"
+ #include "controller.hpp"
++
++Q_MOC_INCLUDE("monitor.hpp");
+ 
+ namespace qs::i3::ipc {
+ 
+@@ -57,7 +59,7 @@
+ 	[[nodiscard]] QBindable<bool> bindableActive() { return &this->bActive; }
+ 	[[nodiscard]] QBindable<bool> bindableFocused() { return &this->bFocused; }
+ 	[[nodiscard]] QBindable<bool> bindableUrgent() { return &this->bUrgent; }
+-	[[nodiscard]] QBindable<I3Monitor*> bindableMonitor() { return &this->bMonitor; }
++	[[nodiscard]] QBindable<I3Monitor*> bindableMonitor();
+ 	[[nodiscard]] QVariantMap lastIpcObject() const;
+ 
+ 	void updateFromObject(const QVariantMap& obj);
+--- a/src/services/pipewire/peak.hpp
++++ b/src/services/pipewire/peak.hpp
+@@ -8,6 +8,8 @@
+ #include <qvector.h>
+ 
+ #include "node.hpp"
++
++Q_MOC_INCLUDE("qml.hpp");
+ 
+ namespace qs::service::pipewire {
+ 
+--- a/src/services/pipewire/spectrum.hpp
++++ b/src/services/pipewire/spectrum.hpp
+@@ -12,6 +12,8 @@
+ #include <qtypes.h>
+ 
+ #include "node.hpp"
++
++Q_MOC_INCLUDE("qml.hpp");
+ 
+ namespace qs::service::pipewire {
+ 

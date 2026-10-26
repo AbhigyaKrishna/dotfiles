@@ -68,6 +68,12 @@ lock-before-sleep.service
 # control note in meta/packages.txt for the measurements). Install the matching
 # config first, then enable:
 #   sudo nbfc config -s "HP Pavilion Gaming Laptop 15-ec2xxx"
+# Then point both fans at the hotter of CPU and dGPU. By default both follow
+# @CPU only — nbfc cannot see the RTX 3050 unless asked for nvidia-ml — so in a
+# GPU-bound game the GPU fan idles on a cool CPU reading while the GPU cooks:
+#   sudo nbfc sensors set -f 0 -s @CPU -s nvidia-ml -a Max
+#   sudo nbfc sensors set -f 1 -s @CPU -s nvidia-ml -a Max
+#   sudo systemctl restart nbfc_service
 # Check it with `nbfc status -a`. Note it reports fan speed as a PERCENTAGE of
 # the configured range, not RPM — nothing on this machine reports true RPM, since
 # hp-wmi's fan inputs are the broken ones. The percentage is still the useful

@@ -1,11 +1,9 @@
 // ────────────── Lid Switch ──────────────
 // https://github.com/YaLTeR/niri/wiki/Configuration:-Switch-Events
 //
-// Lid handling belongs to niri here, not logind. noctalia has no logind
-// integration — it never listens for org.freedesktop.login1's Lock signal —
-// so logind's HandleLidSwitch=lock would blank the display while leaving the
-// session wide open. meta/system/logind.conf.d/10-lid.conf sets every
-// HandleLidSwitch* to "ignore" so the handlers below are the only ones.
+// Niri owns lid handling so niri-power-action can distinguish mains, battery
+// and docked operation. logind.conf.d/10-lid.conf disables logind lid actions
+// to avoid racing those handlers. Native Noctalia also locks before suspend.
 //
 // Closing the lid locks and nothing else: builds, downloads, music and SSH
 // sessions all keep running. niri-power-action suspends only on battery —
