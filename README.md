@@ -89,6 +89,12 @@ is supervised by `noctalia.service`, tracked under `desktop/niri`. After
 stowing the profile, enable it with `systemctl --user enable --now noctalia`.
 Niri bindings and the lid helper use `noctalia msg`.
 
+Type **`/profile`** in Noctalia's launcher (or press `Super+Shift+T`) to switch
+between your saved desktop and a separate Glyph-inspired theme. Each owns its keybindings,
+window layout, animations and the entire Noctalia shell, with light/dark controls
+and graphical configuration tools. See
+[desktop themes](docs/desktop-themes.md) for coverage, persistence and recovery.
+
 The v4 JSON settings and plugin files remain available for recovery. They are
 not read by v5. See [the migration notes](docs/noctalia-v5.md) for preserved
 behavior, plugin changes, validation and rollback.
@@ -813,13 +819,12 @@ serial. On a second machine, re-detect in Monique rather than reusing these.
 ## Theme
 
 `adw-gtk3-dark` throughout: `gtk-3.0/settings.ini`, `gtk-4.0/settings.ini`,
-`.gtkrc-2.0`, `xsettingsd.conf`, and the `GTK_THEME` export in `.profile` all
+`.gtkrc-2.0` and `xsettingsd.conf` all
 name it.
 
-They previously all said `cachyos-nord`, a theme that is not installed and is
-not in any repo. GTK apps looked right only because `GTK_THEME` overrides the
-settings files; unset it and everything fell back to unstyled Adwaita. The
-files now state what is actually in effect.
+They previously named the unavailable `cachyos-nord` theme. The settings now
+name the installed base theme. `GTK_THEME` is no longer forced in `.profile`,
+so the desktop theme switcher can select the light variant too.
 
 Note that `.gtkrc-2.0` carries a "DO NOT EDIT, will be overwritten by nwg-look"
 header. Running nwg-look may revert it — check `git diff` afterwards.

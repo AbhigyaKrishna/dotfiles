@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3840" height="2160" viewBox="0 0 3840 2160">
+  <defs>
+    <pattern id="dots" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="20" cy="20" r="1.4" fill="#202020"/>
+    </pattern>
+    <pattern id="matrix" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="3" fill="#383838"/>
+    </pattern>
+    <radialGradient id="fade"><stop offset="0" stop-color="white"/><stop offset="1" stop-color="black"/></radialGradient>
+    <mask id="globe"><ellipse cx="3350" cy="1770" rx="880" ry="750" fill="url(#fade)"/></mask>
+  </defs>
+  <rect width="3840" height="2160" fill="#000000"/>
+  <rect width="3840" height="2160" fill="url(#dots)"/>
+  <rect width="3840" height="2160" fill="url(#matrix)" mask="url(#globe)"/>
+  <circle cx="3590" cy="1970" r="10" fill="#D71921"/>
+</svg>

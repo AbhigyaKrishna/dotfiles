@@ -1,4 +1,4 @@
-# Apply the 5600H thermal and power caps at boot, and again after every resume.
+# Apply the 5600H thermal and power caps at boot, resume, and on a timer.
 #
 # Why it must re-run. ryzenadj writes to the SMU — the CPU's own power management
 # microcontroller — and those writes are volatile. The SMU is reinitialised from
@@ -6,6 +6,11 @@
 # the first time the lid closes and reopens. A boot-only unit would appear to
 # work, then stop working, which is the worst failure shape available. Hence the
 # two Install targets below.
+# Firmware can also overwrite power limits while the machine is awake: the
+# 90°C temperature cap survived while 35/45/38 W reverted to 45/65/54 W.
+# ryzenadj-thermal.timer refreshes the caps every 30 seconds to repair that drift.
+# The helper only lowers values above the configured caps, preserving any lower
+# power or temperature limits selected by the system during gaming.
 #
 # Ordering. After=suspend.target hibernate.target hybrid-sleep.target means that
 # on the resume path this runs once the SMU is back up rather than racing it.
@@ -25,16 +30,19 @@
 #     /usr/local/bin/ryzenadj-thermal
 #   sudo install -Dm644 meta/system/ryzenadj-thermal.service \
 #     /etc/systemd/system/ryzenadj-thermal.service
+#   sudo install -Dm644 meta/system/ryzenadj-thermal.timer \
+#     /etc/systemd/system/ryzenadj-thermal.timer
 #   sudo systemctl daemon-reload
-#   sudo systemctl enable --now ryzenadj-thermal.service
+#   sudo systemctl enable --now ryzenadj-thermal.service ryzenadj-thermal.timer
 #
-# Check it took: `sudo ryzenadj -i` should report THM LIMIT CORE at the TCTL set
-# in the script, and STAPM LIMIT at the STAPM value. Then confirm the resume path
+# Check it took: `sudo ryzenadj -i` should report THM LIMIT CORE and the power
+# limits at or below the caps in the script. Then confirm the resume path
 # once — suspend, resume, and run `sudo ryzenadj -i` again; the limits should
 # still be there. If they have reverted to 95°C, the ordering needs revisiting.
 #
-# To undo entirely: `sudo systemctl disable --now ryzenadj-thermal.service` and
-# reboot. The caps are volatile, so a power cycle clears them with no residue.
+# To undo entirely, disable both ryzenadj-thermal.timer and
+# ryzenadj-thermal.service, then reboot. The caps are volatile, so a power cycle
+# clears them with no residue.
 
 [Unit]
 Description=Apply Ryzen thermal and power caps (SMU limits are volatile)

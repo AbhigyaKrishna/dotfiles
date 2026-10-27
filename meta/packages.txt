@@ -9,6 +9,7 @@
 # --- core: without these the repo cannot bootstrap itself ------------------
 stow
 git
+python                      # desktop-theme preset manager
 
 # --- desktop: backs desktop/niri ------------------------------------------
 niri
@@ -60,7 +61,7 @@ visual-studio-code-insiders-bin  # AUR - default editor: text/plain, markdown,
 xdgctl                      # AUR - TUI for editing these defaults
 
 # --- theming and environment: backs theme/adw-dark and common/env ---------
-adw-gtk-theme               # .profile sets GTK_THEME=adw-gtk3-dark
+adw-gtk-theme               # GTK base; Noctalia selects its light/dark variant
 ttf-meslo-nerd              # nerd-font glyphs shared by two consumers: the
                             # noctalia bar (module icons) and the powerlevel10k
                             # prompt. MesloLGS NF is the face p10k's configure
@@ -116,12 +117,11 @@ tlpui                       # GTK editor for the drop-in, the way xdgctl edits
                             #   mimeapps.list — changes show up as a diff
 
 # TLP tunes the OS-visible knobs; it cannot touch the SMU. This chassis needs
-# that second layer: the firmware targets Tjmax (95°C) and will sit on it, which
-# means throttling reactively — overshoot, cut hard, recover, overshoot again,
-# with frametimes following the sawtooth. ryzenadj lowers the junction
-# temperature target and the power budget directly so the part settles below the
-# cliff instead. This is the backstop, not the fix — nbfc-linux below is what
-# actually made this machine cool. Backs meta/system/ryzenadj-thermal.service —
+# that second layer: historical CPU readings reached 94–96°C. AMD specifies
+# a 105°C Tjmax for the 5600H; our 90°C target leaves extra thermal margin.
+# ryzenadj sets the temperature target and power budget directly. Lower CPU
+# power also leaves cooling capacity for the GPU. This backs the service and
+# refresh timer in meta/system/; nbfc-linux below controls the fans directly.
 # AUR, so paru rather than pacman, and not covered by install-packages.sh.
 ryzenadj                    # AUR. Writes are volatile and lost on resume,
                             #   which is why the unit re-applies on wake

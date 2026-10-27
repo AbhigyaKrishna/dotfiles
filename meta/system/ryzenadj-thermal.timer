@@ -1,0 +1,12 @@
+# Firmware may restore power limits between boot and resume. Keep applying the
+# existing caps only when exceeded; never raise a lower system-selected limit.
+[Unit]
+Description=Refresh volatile Ryzen thermal and power caps
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=30s
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

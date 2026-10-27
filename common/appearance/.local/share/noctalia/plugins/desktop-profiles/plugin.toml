@@ -1,0 +1,16 @@
+id = "dotfiles/desktop-profiles"
+name = "Desktop Profiles"
+version = "1.0.0"
+plugin_api = 24
+author = "dotfiles"
+description = "Switch complete desktop profiles from the launcher."
+icon = "palette"
+dependencies = ["python", "libnotify"]
+
+[[launcher_provider]]
+id = "profiles"
+entry = "profiles.luau"
+prefix = "profile"
+glyph = "palette"
+include_in_global_search = false
+debounce_ms = 80

@@ -1,0 +1,4 @@
+revision = 2
+title = "Your original"
+description = "Your complete saved shell, window layout and keybindings"
+shortcuts = "Super+Space: launcher · Super+Shift+Tab: window search · Super+Shift+Escape: all active shortcuts"

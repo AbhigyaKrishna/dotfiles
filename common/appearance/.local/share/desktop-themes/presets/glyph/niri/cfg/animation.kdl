@@ -1,0 +1,12 @@
+// Glyph moves quickly with eased transitions rather than spring overshoot.
+animations {
+    workspace-switch { duration-ms 220; curve "ease-out-cubic"; }
+    window-open { duration-ms 180; curve "ease-out-expo"; }
+    window-close { duration-ms 150; curve "ease-out-quad"; }
+    horizontal-view-movement { duration-ms 220; curve "ease-out-cubic"; }
+    window-movement { duration-ms 180; curve "ease-out-cubic"; }
+    window-resize { duration-ms 180; curve "ease-out-cubic"; }
+    config-notification-open-close { duration-ms 150; curve "ease-out-cubic"; }
+    screenshot-ui-open { duration-ms 180; curve "ease-out-quad"; }
+    overview-open-close { duration-ms 220; curve "ease-out-cubic"; }
+}

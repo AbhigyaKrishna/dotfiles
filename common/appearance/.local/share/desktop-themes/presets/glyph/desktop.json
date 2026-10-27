@@ -1,0 +1,82 @@
+[
+  {
+    "name": "clock",
+    "type": "clock",
+    "x": 0.29,
+    "y": 0.3,
+    "width": 0.42,
+    "height": 0.23,
+    "settings": {
+      "font_family": "Glyph Dots",
+      "background": false,
+      "background_opacity": 1.0,
+      "background_radius": 28.0,
+      "shadow": false,
+      "format": "{:%H:%M}"
+    }
+  },
+  {
+    "name": "date",
+    "type": "clock",
+    "x": 0.29,
+    "y": 0.48,
+    "width": 0.4,
+    "height": 0.045,
+    "settings": {
+      "font_family": "Glyph Dots",
+      "background": false,
+      "background_opacity": 1.0,
+      "background_radius": 28.0,
+      "shadow": false,
+      "format": "{:%A, %d %B}"
+    }
+  },
+  {
+    "name": "weather",
+    "type": "weather",
+    "x": 0.75,
+    "y": 0.28,
+    "width": 0.28,
+    "height": 0.22,
+    "settings": {
+      "font_family": "Glyph Dots",
+      "background": true,
+      "background_opacity": 1.0,
+      "background_radius": 28.0,
+      "shadow": false
+    }
+  },
+  {
+    "name": "media",
+    "type": "media_player",
+    "x": 0.75,
+    "y": 0.54,
+    "width": 0.28,
+    "height": 0.18,
+    "settings": {
+      "font_family": "Glyph UI",
+      "background": true,
+      "background_opacity": 1.0,
+      "background_radius": 28.0,
+      "shadow": false
+    }
+  },
+  {
+    "name": "system",
+    "type": "sysmon",
+    "x": 0.75,
+    "y": 0.78,
+    "width": 0.28,
+    "height": 0.18,
+    "settings": {
+      "font_family": "Glyph UI",
+      "background": true,
+      "background_opacity": 1.0,
+      "background_radius": 28.0,
+      "shadow": false,
+      "stat": "cpu_usage",
+      "stat2": "cpu_temp",
+      "color": "primary"
+    }
+  }
+]

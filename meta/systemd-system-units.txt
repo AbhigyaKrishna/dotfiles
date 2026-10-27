@@ -86,12 +86,11 @@ nbfc_service.service
 # bouncing off it. Needs ryzenadj from the AUR, plus the unit and its helper
 # installed from meta/system/. The caps are volatile SMU writes, so the unit is
 # also WantedBy the sleep targets and re-applies on every resume; enabling it
-# here covers only the boot path.
+# here covers only the boot path. Install and enable the timer too: firmware
+# can restore the power limits while awake, even when the temperature cap holds.
 #
-# ORDER MATTERS: enable this only AFTER nbfc_service is working, and set the cap
-# from measurements taken with the fans behaving. It is currently 90°C, which
-# suits an idle in the low 60s. The earlier value of 85°C was chosen while the
-# fans were still stuck and the machine idled at 74.8°C — on a machine in that
-# state a cap that close to idle throttles the part at rest, trading a heat
-# problem for a permanent performance one.
+# Enable this only AFTER nbfc_service is working. A local CPU comparison chose
+# 40 W sustained, 55 W burst and 45 W medium limits with a 90°C temperature
+# target. See the helper for measurements and their scope.
 ryzenadj-thermal.service
+ryzenadj-thermal.timer

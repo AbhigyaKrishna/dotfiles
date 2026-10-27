@@ -143,7 +143,7 @@ type = "noctalia/screen_recorder:recorder"
 type = "8bury/mini-docker:mini-docker"
 
 [plugins]
-enabled = ["levi/warp", "baizhu/paged-todo", "noctalia/notes", "noctalia/screen_recorder", "8bury/mini-docker"]
+enabled = ["levi/warp", "baizhu/paged-todo", "noctalia/notes", "noctalia/screen_recorder", "8bury/mini-docker", "dotfiles/desktop-profiles"]
 auto_update = "all"
 
 [dock]
@@ -163,6 +163,9 @@ wallpaper_scheme = "m3-content"
 [theme.templates]
 enable_builtin_templates = true
 builtin_ids = ["gtk3", "gtk4"]
+
+[hooks]
+colors_changed = "$HOME/.local/bin/desktop-theme ready"
 
 [wallpaper]
 enabled = true

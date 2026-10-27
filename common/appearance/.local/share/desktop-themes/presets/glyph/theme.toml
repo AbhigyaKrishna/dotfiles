@@ -1,0 +1,5 @@
+revision = 2
+title = "Glyph"
+icon = "nothing.svg"
+description = "A dot-matrix desktop using the original profile's keybindings"
+shortcuts = "Super+Space: launcher · Super+Shift+Tab: window search · Super+Shift+Escape: all active shortcuts"

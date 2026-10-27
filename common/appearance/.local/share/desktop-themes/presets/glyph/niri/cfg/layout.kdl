@@ -1,0 +1,13 @@
+layout {
+    gaps 10
+    center-focused-column "never"
+    background-color "transparent"
+
+    preset-column-widths {
+        proportion 0.4
+        proportion 0.6
+        proportion 1.0
+    }
+
+    struts {}
+}

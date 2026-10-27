@@ -1,0 +1,235 @@
+# A complete Noctalia shell profile. Unspecified keys use native defaults,
+# independently of the active theme's configuration and GUI overrides.
+[shell]
+font_family = "Glyph UI"
+app_icon_colorize = true
+app_icon_color = "on_surface"
+corner_radius_scale = 1.6
+telemetry_enabled = false
+polkit_agent = false
+clipboard_enabled = true
+clipboard_keep_from_closed_apps = true
+niri_overview_type_to_launch_enabled = false
+
+[shell.launcher]
+app_grid = false
+categories = false
+sort_by_usage = true
+pinned = ["zen", "code-insiders", "dev.zed.Zed"]
+
+[shell.window_switcher]
+style = "compact"
+
+[shell.session]
+grid = true
+grid_columns = 3
+
+[[shell.session.actions]]
+action = "lock"
+shortcut = "1"
+
+[[shell.session.actions]]
+action = "lock_and_suspend"
+shortcut = "2"
+countdown_seconds = 10
+
+[[shell.session.actions]]
+action = "command"
+label = "Hibernate"
+command = "systemctl hibernate"
+shortcut = "3"
+countdown_seconds = 10
+
+[[shell.session.actions]]
+action = "reboot"
+shortcut = "4"
+countdown_seconds = 10
+
+[[shell.session.actions]]
+action = "logout"
+shortcut = "5"
+countdown_seconds = 10
+
+[[shell.session.actions]]
+action = "shutdown"
+shortcut = "6"
+countdown_seconds = 10
+
+[[shell.session.actions]]
+action = "command"
+label = "Reboot to UEFI"
+command = "systemctl reboot --firmware-setup"
+shortcut = "7"
+countdown_seconds = 10
+
+[shell.panel]
+transparency_mode = "solid"
+borders = true
+border_width = 1.0
+shadow = false
+launcher_placement = "floating"
+launcher_position = "center"
+control_center_placement = "floating"
+control_center_position = "center"
+clipboard_placement = "floating"
+clipboard_position = "center"
+session_placement = "floating"
+session_position = "center"
+
+[bar.main]
+position = "left"
+reserve_space = true
+start = ["launcher", "workspaces"]
+center = ["clock"]
+end = ["network", "volume", "battery", "notifications", "theme_mode", "control-center", "session"]
+background_opacity = 1.0
+capsule = false
+margin_edge = 10
+margin_ends = 12
+radius = 20
+radius_top_left = 20
+radius_top_right = 20
+radius_bottom_left = 20
+radius_bottom_right = 20
+thickness = 56
+shadow = false
+border_width = 1.0
+
+[widget.launcher]
+glyph = "circle-dotted"
+custom_image = @NOTHING_ICON@
+custom_image_colorize = false
+
+[widget.clock]
+font_family = "Glyph Dots"
+format = "{:%H:%M}"
+
+[widget.date]
+type = "clock"
+font_family = "Glyph Dots"
+
+[widget.workspaces]
+font_family = "Glyph Dots"
+label_source = "id"
+labels_only_when_occupied = true
+max_label_chars = 2
+pill_scale = 0.7
+
+[widget.volume]
+show_label = false
+
+[widget.battery]
+font_family = "Glyph Dots"
+show_label = false
+
+[widget.network]
+font_family = "Glyph Dots"
+
+[widget.keyboard_layout]
+font_family = "Glyph Dots"
+
+[widget.active_window]
+font_family = "Space Grotesk"
+
+[widget.media]
+font_family = "Space Grotesk"
+
+[widget.session.actions]
+left = "panel-toggle dotfiles/glyph-power:menu"
+
+[plugins]
+enabled = ["dotfiles/desktop-profiles", "dotfiles/glyph-power"]
+
+[theme]
+source = "custom"
+custom_palette = "Glyph"
+mode = "dark"
+shell_mode = "follow"
+sync_color_scheme = true
+
+[theme.templates]
+enable_builtin_templates = true
+builtin_ids = ["gtk3", "gtk4", "qt", "niri", "kitty", "alacritty", "btop"]
+
+[dock]
+enabled = false
+background_opacity = 1.0
+radius = 24
+shadow = false
+
+[wallpaper.default]
+path = @WALLPAPER@
+
+[notification]
+position = "top_right"
+background_opacity = 1.0
+
+[osd]
+position = "top_right"
+background_opacity = 1.0
+
+[hooks]
+colors_changed = "$HOME/.local/bin/desktop-theme ready"
+theme_mode_changed = "$HOME/.local/bin/desktop-theme sync"
+
+[wallpaper]
+enabled = true
+fill_mode = "crop"
+
+[lockscreen]
+enabled = true
+lock_before_suspend = true
+blur_intensity = 0.0
+tint_intensity = 0.5
+
+[audio]
+enable_sounds = false
+
+[control_center]
+width = 680
+sidebar = "compact"
+show_shortcut_labels = false
+show_session_button = false
+
+[[control_center.shortcuts]]
+type = "wifi"
+
+[[control_center.shortcuts]]
+type = "bluetooth"
+
+[[control_center.shortcuts]]
+type = "caffeine"
+
+[[control_center.shortcuts]]
+type = "nightlight"
+
+[[control_center.shortcuts]]
+type = "notification"
+
+[[control_center.shortcuts]]
+type = "dotfiles/glyph-power:power"
+
+[idle]
+pre_action_fade_seconds = 5
+behavior_order = ["lock", "battery-screen-off", "screen-off", "battery-suspend"]
+
+[idle.behavior.lock]
+enabled = true
+timeout = 600
+action = "lock"
+
+[idle.behavior.battery-screen-off]
+timeout = 660
+action = "command"
+command = "$HOME/.local/bin/niri-power-action idle-screen-off"
+resume_command = "$HOME/.local/bin/niri-power-action idle-screen-on"
+
+[idle.behavior.screen-off]
+enabled = true
+timeout = 1200
+action = "screen_off"
+
+[idle.behavior.battery-suspend]
+timeout = 1200
+action = "command"
+command = "$HOME/.local/bin/niri-power-action idle-suspend"

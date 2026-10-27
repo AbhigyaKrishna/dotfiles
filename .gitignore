@@ -32,6 +32,11 @@
 # ---------------------------------------------------------------------------
 **/micro/syntax/
 **/noctalia/plugins/
+!common/appearance/.local/share/noctalia/plugins/
+!common/appearance/.local/share/noctalia/plugins/desktop-profiles/
+!common/appearance/.local/share/noctalia/plugins/desktop-profiles/**
+!common/appearance/.local/share/noctalia/plugins/glyph-power/
+!common/appearance/.local/share/noctalia/plugins/glyph-power/**
 **/polychromatic/devices/
 **/polychromatic/states/
 
@@ -76,8 +81,10 @@
 # Derived state, not dotfiles — see docs/superpowers/specs/2026-08-18-wallpaper-driven-theming-design.md
 # ---------------------------------------------------------------------------
 **/gtk-3.0/noctalia.css
+**/gtk-3.0/noctalia-extensions.css
 **/gtk-3.0/gtk.css
 **/gtk-4.0/noctalia.css
+**/gtk-4.0/noctalia-extensions.css
 **/gtk-4.0/gtk.css
 # nodeterm canvas layout and agent session ids for this checkout
 .nodeterm/

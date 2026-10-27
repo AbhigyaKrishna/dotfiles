@@ -1,0 +1,35 @@
+id = "dotfiles/glyph-power"
+name = "Glyph Power"
+version = "1.1.0"
+plugin_api = 36
+author = "dotfiles"
+description = "Dot-matrix power menu for the Glyph desktop profile."
+icon = "power"
+dependencies = ["niri"]
+
+[[panel]]
+id = "menu"
+entry = "menu.luau"
+# v5.4 layers do not expose raw key callbacks. This tiny input surface keeps
+# keyboard handling behind the full-screen visual layer, without a visible card.
+width = 1
+height = 1
+placement = "floating"
+position = "center"
+layer = "overlay"
+keyboard_focus = "exclusive"
+dismiss_on_outside_click = false
+capture_keys = ["Up", "Down", "k", "j", "Return", "KP_Enter", "space", "1", "2", "3", "4", "5", "6", "7"]
+
+[[layer]]
+id = "screen"
+entry = "screen.luau"
+layer = "overlay"
+anchors = ["top", "bottom", "left", "right"]
+exclusive_zone = -1
+keyboard = "none"
+output = "focused"
+
+[[shortcut]]
+id = "power"
+entry = "shortcut.luau"
